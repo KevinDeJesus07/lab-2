@@ -300,63 +300,121 @@ class TheaterGUI:
         mode_text = "(Modo Dev)" if self.developer_mode_enabled else ""
         self.status_label.config(text=f"Mostrando {sala.nombre} {mode_text}")
 
+        # --- Añadir Pantalla Visual Abajo ---
+        # Usar un Frame simple para representar la pantalla
+        screen_frame = tk.Frame(self.content_frame, bg='black', height=20) 
+        # Empaquetar la pantalla en la parte INFERIOR del content_frame
+        screen_frame.pack(side='bottom', fill='x', padx=50, pady=(10, 20))
+
+        screen_label = tk.Label(screen_frame, text="PANTALLA", bg='black', fg='white', font=('Arial', 10, 'bold'))
+        screen_label.pack(pady=2)
+
         # Pasar el frame padre y la sala a la función que dibuja asientos
         self.mostrar_asientos(self.content_frame, sala)
 
 
+# ... dentro de la clase TheaterGUI ...
+
     def mostrar_asientos(self, parent, sala):
-        """Dibuja la cuadrícula de asientos para una sala dada."""
-        filas = 10
-        columnas = 8
-        
+        """Dibuja la cuadrícula de asientos con el layout especificado por el usuario."""
+
+        # --- Definición del Layout Específico (80 asientos) ---
+        # Pantalla abajo, Fila 0 es la más lejana
+        seats_per_row = [11]*2 + [9]*2 + [7]*5 + [5]*1  # -> Total 80 asientos
+        num_rows = len(seats_per_row)
+
+        # El máximo de asientos define el ancho necesario del bloque central
+        max_seats_in_row = 11 # Definido por las primeras filas
+        # Columnas necesarias: 1 (pasillo izq) + 11 (max asientos) + 1 (pasillo der)
+        num_grid_cols = 1 + max_seats_in_row + 1 # = 13 columnas
+
+        parent_bg_color = parent['bg']
+
         # Frame para contener la cuadrícula de asientos
-        grid_frame = tk.Frame(parent, bg='#f8f8f8')
-        # Centrar el grid_frame dentro del content_frame
-        grid_frame.pack(expand=True) 
+        grid_frame = tk.Frame(parent, bg=parent_bg_color)
+        grid_frame.pack(side='top', expand=True, pady=(20, 10))
 
-        for i in range(filas):
-            for j in range(columnas):
-                indice_asiento = i * columnas + j
-                if indice_asiento < len(sala.asientos): # Asegurarse de no exceder la lista
-                    asiento = sala.asientos[indice_asiento]
-                    
-                    img_to_use = self.img_available
-                    color_fallback = 'green' # Color si no hay imágenes
-                    if not asiento.está_disponible():
-                         img_to_use = self.img_occupied
-                         color_fallback = 'red'
-                    
-                    # Decide si usar imagen o color de fondo
-                    if self.img_available and self.img_occupied:
-                        # Usar imagen
-                        seat_btn = tk.Button(grid_frame, image=img_to_use, 
-                                             width=40, height=40, # Tamaño del botón (ajustar)
-                                             borderwidth=1) # Borde ligero
-                        # !! Importante: Guardar referencia a la imagen !!
-                        seat_btn.image = img_to_use 
-                    else:
-                        # Usar color (fallback)
-                         # Mostrar ID del asiento si no hay imagen
-                        seat_btn = tk.Button(grid_frame, text=asiento.id, bg=color_fallback, 
-                                             width=4, height=2, # Tamaño diferente para texto
-                                             relief='ridge')
+        # --- Lógica para colocar asientos con indentación ---
+        asiento_index = 0
 
-                    # Hacer el botón clickable SIEMPRE, pero la acción depende del modo Dev
-                    seat_btn.config(state='normal') 
-                    # Asociar acción al click: lambda pasa el asiento y el botón específicos
-                    seat_btn.config(command=lambda a=asiento, b=seat_btn: self.on_seat_click(a, b))
+        for i in range(num_rows): # Iterar filas 0 a 9
+            num_seats_this_row = seats_per_row[i]
 
-                    # Borde diferente si el modo dev está activo para indicar interactividad
-                    if self.developer_mode_enabled:
-                         seat_btn.config(relief='raised', borderwidth=2)
-                    else:
-                         seat_btn.config(relief='solid', borderwidth=1)
+            # Calcular cuántas columnas vacías dejar a cada lado respecto al máximo (11)
+            # La diferencia siempre será par (0, 2, 4, 6), así que //2 funciona bien para simetría
+            indent_each_side = (max_seats_in_row - num_seats_this_row) // 2
 
+            # Columna de la grilla donde empiezan los asientos en esta fila
+            # (Columna 0 es pasillo, luego vienen los 'indent_each_side' espacios vacíos)
+            start_seat_col = 1 + indent_each_side
+            # Columna de la grilla donde terminan los asientos en esta fila
+            end_seat_col = start_seat_col + num_seats_this_row - 1
 
-                    seat_btn.grid(row=i, column=j, padx=5, pady=5) # Ajusta padding
+            for j in range(num_grid_cols): # Iterar columnas 0 a 12
+                # 1. Pasillo Izquierdo (Columna 0)
+                if j == 0:
+                    aisle_frame = tk.Frame(grid_frame, width=30, height=45, bg=parent_bg_color)
+                    aisle_frame.grid(row=i, column=j, padx=5, pady=5)
+                    aisle_frame.pack_propagate(False)
+
+                # 2. Pasillo Derecho (Última Columna: 12)
+                elif j == num_grid_cols - 1:
+                    aisle_frame = tk.Frame(grid_frame, width=30, height=45, bg=parent_bg_color)
+                    aisle_frame.grid(row=i, column=j, padx=5, pady=5)
+                    aisle_frame.pack_propagate(False)
+
+                # 3. Espacio de Asientos / Espacios Vacíos (Columnas 1 a 11)
                 else:
-                    # Espacio vacío si hay más celdas en la grilla que asientos
-                    tk.Frame(grid_frame, width=45, height=45, bg=parent['bg']).grid(row=i, column=j, padx=5, pady=5)
+                    # ¿Esta columna 'j' debe tener un asiento en esta fila 'i'?
+                    if start_seat_col <= j <= end_seat_col:
+                        # Sí, colocar asiento
+                        if asiento_index < len(sala.asientos):
+                            asiento = sala.asientos[asiento_index]
+
+                            img_to_use = self.img_available
+                            if not asiento.está_disponible():
+                                img_to_use = self.img_occupied
+
+                            button_config = {
+                                "borderwidth": 0,
+                                "highlightthickness": 0,
+                                "relief": "flat",
+                                "bg": parent_bg_color,
+                                "activebackground": parent_bg_color
+                            }
+
+                            if self.img_available and self.img_occupied:
+                                seat_btn = tk.Button(grid_frame, image=img_to_use,
+                                                     width=40, height=40,
+                                                     **button_config)
+                                seat_btn.image = img_to_use
+                            else: # Fallback
+                                seat_btn = tk.Button(grid_frame, text=asiento.id, bg='gray',
+                                                     width=4, height=2, relief='ridge')
+
+                            seat_btn.config(state='normal')
+                            seat_btn.config(command=lambda a=asiento, b=seat_btn: self.on_seat_click(a, b))
+
+                            if self.developer_mode_enabled:
+                                seat_btn.config(highlightthickness=1, highlightbackground="blue")
+                            else:
+                                seat_btn.config(highlightthickness=0)
+
+                            seat_btn.grid(row=i, column=j, padx=5, pady=5)
+                            asiento_index += 1
+                        else:
+                            # Error lógico si esto ocurre
+                            print(f"Error: Se esperaban más asientos. Índice {asiento_index}")
+                            tk.Frame(grid_frame, width=45, height=45, bg="red").grid(row=i, column=j, padx=5, pady=5)
+
+                    else:
+                        # No, esta columna 'j' es un espacio vacío indentado en esta fila 'i'
+                        empty_space = tk.Frame(grid_frame, width=45, height=45, bg=parent_bg_color)
+                        empty_space.grid(row=i, column=j, padx=5, pady=5)
+
+        # Debug: Verificar si se usaron todos los asientos
+        if asiento_index != len(sala.asientos):
+            print(f"Advertencia: El layout usó {asiento_index} asientos, pero la sala tiene {len(sala.asientos)}.")
 
     def on_seat_click(self, asiento: Asiento, button: tk.Button):
         """Manejador de eventos para cuando se hace clic en un asiento."""
