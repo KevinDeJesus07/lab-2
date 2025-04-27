@@ -37,10 +37,12 @@ MOVIE_DATA_FILE = 'movies.txt'  # Archivo de datos de funciones
 DEFAULT_SEATS_PER_THEATER = 80
 SEAT_IMG_AVAILABLE = "seat_available.png"
 SEAT_IMG_OCCUPIED = "seat_occupied.png"
+SEAT_IMG_SELECTED = "seat_selected.png" 
 SEAT_IMG_WIDTH = 40
 SEAT_IMG_HEIGHT = 40
 DEFAULT_THEATER_NAMES = ['Sala 1', 'Sala 2', 'Sala 3']
-PRECIO_TIQUETE = 15000 # Precio estándar por tiquete
+PRECIO_TIQUETE = 15000 # Precio base por tiquete
+TICKET_DATA_FILE = 'tickets.txt'
 
 class Asiento:
     """Representa un único asiento en una sala de cine."""
@@ -361,19 +363,8 @@ class Admin:
         self.tiquetes: Dict[str, List[Tiquete]] = {} # Clave es id_cliente (str)
 
         # Controlador para leer/escribir datos de funciones
-        # TODO: Crear un controlador/archivo separado para tiquetes.
         self.controlador_funciones = ControladorDeArchivos(MOVIE_DATA_FILE)
-        # self.controlador_tiquetes = ControladorDeArchivos(TICKET_DATA_FILE) # Recomendado
-
-        # *** ADVERTENCIA IMPORTANTE ***
-        # La lógica actual para guardar tiquetes usa el mismo archivo
-        # que las funciones (MOVIE_DATA_FILE). Esto puede CORROMPER
-        # el archivo movies.txt. Se recomienda implementar un archivo
-        # separado ('tickets.txt') y usar un segundo ControladorDeArchivos.
-        print("\n*** ADVERTENCIA: Guardado de tiquetes configurado en 'movies.txt'. "
-              "Se recomienda usar un archivo 'tickets.txt' separado. ***\n")
-        self.controlador_tiquetes_actual = self.controlador_funciones # Temporal, ¡cambiar!
-
+        self.controlador_tiquetes = ControladorDeArchivos(TICKET_DATA_FILE)
 
     def add_cliente(self, cliente: Cliente) -> None:
         """Añade un nuevo cliente al sistema."""
@@ -408,18 +399,18 @@ class Admin:
             bool: True si se asignó correctamente, False si hubo un error
                   (ej. sala llena o no existe).
         """
-        if funcion.teatro.nombre not in self.funciones_diarias:
-            print(f"Error: Teatro '{funcion.teatro.nombre}' no existe en la programación.")
+        if funcion.teatro_funcion.nombre not in self.funciones_diarias:
+            print(f"Error: Teatro '{funcion.teatro_funcion.nombre}' no existe en la programación.")
             return False
 
-        funciones_sala = self.funciones_diarias[funcion.teatro.nombre]
+        funciones_sala = self.funciones_diarias[funcion.teatro_funcion.nombre]
 
         # Lógica de validación simple (ej: no más de 2 funciones por sala)
         # TODO: Implementar validación de horarios más robusta (solapamientos)
         if len(funciones_sala) >= 2:
-            print(f"Advertencia: El teatro {funcion.teatro.nombre} ya tiene 2 funciones. No se añadió '{funcion.pelicula.nombre}'.")
+            print(f"Advertencia: El teatro {funcion.teatro_funcion.nombre} ya tiene 2 funciones. No se añadió '{funcion.pelicula.nombre}'.")
             # Considerar lanzar un error si es una regla estricta
-            # raise ValueError(f"El teatro {funcion.teatro.nombre} ya tiene dos funciones programadas")
+            # raise ValueError(f"El teatro {funcion.teatro_funcion.nombre} ya tiene dos funciones programadas")
             return False
 
         funciones_sala.append(funcion)
@@ -504,7 +495,7 @@ class Admin:
         for asiento_id in ids_asientos:
             asiento = funcion.obtener_asiento_por_id(asiento_id)
             if asiento is None:
-                raise ValueError(f"El asiento con ID '{asiento_id}' no existe en la sala '{funcion.teatro.nombre}'.")
+                raise ValueError(f"El asiento con ID '{asiento_id}' no existe en la sala '{funcion.teatro_funcion.nombre}'.")
             if not asiento.está_disponible():
                 raise ValueError(f"El asiento {asiento_id} no está disponible para la función seleccionada.")
             asientos_a_reservar.append(asiento)
@@ -581,21 +572,31 @@ class Admin:
 
     def guardar_tiquete_en_archivo(self, tiquete: Tiquete) -> None:
         """
-        Guarda la información de un tiquete en el archivo configurado.
-        *** ADVERTENCIA: Configurado para usar el archivo de películas. ***
-        *** ¡Esto puede corromper 'movies.txt'! ***
+        Guarda la información de un tiquete en el archivo TICKET_DATA_FILE.
         """
-        tiquete_data = [
-            tiquete.funcion.fecha.strftime('%d/%m/%Y - %H:%M'), # Formato consistente
-            tiquete.funcion.pelicula.nombre,
-            tiquete.funcion.teatro.nombre,
-            tiquete.asiento.id,
-            tiquete.nombre_cliente,
-            f"{tiquete.precio:.2f}" # Formatear precio
-        ]
-        # Usar el controlador configurado (¡que apunta a movies.txt por defecto!)
-        self.controlador_tiquetes_actual.escribir(tiquete_data)
+        try:
+            tiquete_data = [
+                tiquete.funcion.fecha.strftime('%d/%m/%Y - %H:%M'), # Formato DD/MM/YYYY - HH:MM
+                tiquete.funcion.pelicula.nombre,
+                tiquete.funcion.teatro_funcion.nombre,
+                tiquete.asiento.id,
+                # Incluir ID y nombre del cliente para referencia (opcional pero útil)
+                tiquete.funcion.funcion_id if hasattr(tiquete.funcion, 'funcion_id') else 'N/A', # Necesitamos ID único de función
+                self.obtener_id_cliente_por_nombre(tiquete.nombre_cliente), # Necesitamos obtener ID cliente
+                tiquete.nombre_cliente,
+                f"{tiquete.precio:.2f}"
+            ]
+            # --- USA EL CONTROLADOR CORRECTO ---
+            self.controlador_tiquetes.escribir(tiquete_data)
+        except Exception as e:
+            print(f"Error al intentar guardar tiquete en '{TICKET_DATA_FILE}': {e}")
 
+    # Helper para obtener ID (necesario para guardar tiquete consistentemente)
+    def obtener_id_cliente_por_nombre(self, nombre_cliente: str) -> str:
+        for cliente in self.clientes:
+            if cliente.nombre == nombre_cliente:
+                return cliente.id
+        return "ID_Desconocido"
 
     def mostrar_tablero_consola(self, teatro: Teatro) -> None:
         """
@@ -628,6 +629,87 @@ class Admin:
             asiento_idx += asientos_por_fila
         print("------------------------------")
 
+    def guardar_tiquete_en_archivo(self, tiquete: Tiquete) -> None:
+        """
+        Guarda la información ESENCIAL de un tiquete (para restaurar estado)
+        en el archivo TICKET_DATA_FILE.
+        Formato: FechaFuncion;NombrePelicula;NombreSala;IDAsiento
+        """
+        try:
+            # Guardar solo lo necesario para identificar la reserva
+            tiquete_data_simple = [
+                tiquete.funcion.fecha.strftime('%d/%m/%Y - %H:%M'),
+                tiquete.funcion.pelicula.nombre,
+                tiquete.funcion.teatro_funcion.nombre,
+                tiquete.asiento.id,
+            ]
+            self.controlador_tiquetes.escribir(tiquete_data_simple)
+        except Exception as e:
+            print(f"Error al intentar guardar tiquete simple en '{TICKET_DATA_FILE}': {e}")
+
+    def _aplicar_reservas_guardadas(self) -> None:
+        """
+        Lee el archivo de tiquetes guardados (tickets.txt) y marca los asientos
+        correspondientes como ocupados en las funciones cargadas en memoria.
+        Debe llamarse DESPUÉS de cargar las funciones.
+        """
+        print(f"Aplicando reservas guardadas desde '{TICKET_DATA_FILE}'...")
+        tiquetes_guardados = self.controlador_tiquetes.leer()
+        reservas_aplicadas = 0
+        funciones_encontradas = {} # Cache para buscar funciones más rápido
+
+        # Crear un mapa para búsqueda rápida de funciones: (fecha, peli, sala) -> funcion
+        for sala, lista_funciones in self.funciones_diarias.items():
+            for func in lista_funciones:
+                key = (func.fecha, func.pelicula.nombre, func.teatro_funcion.nombre)
+                funciones_encontradas[key] = func
+
+        if not tiquetes_guardados:
+            print("No hay reservas guardadas para aplicar.")
+            return
+
+        for i, record in enumerate(tiquetes_guardados):
+            if len(record) >= 4: # Asegurar que tiene los campos esperados
+                fecha_str, nombre_peli, nombre_sala, asiento_id = record[:4]
+                try:
+                    # Parsear la fecha del tiquete guardado
+                    fecha_funcion_guardada = datetime.strptime(fecha_str.strip(), '%d/%m/%Y - %H:%M')
+                    nombre_peli = nombre_peli.strip()
+                    nombre_sala = nombre_sala.strip()
+                    asiento_id = asiento_id.strip()
+
+                    # Buscar la función correspondiente en memoria usando el mapa
+                    key_busqueda = (fecha_funcion_guardada, nombre_peli, nombre_sala)
+                    funcion_encontrada = funciones_encontradas.get(key_busqueda)
+
+                    if funcion_encontrada:
+                        # Buscar el asiento dentro de la copia de la función encontrada
+                        asiento = funcion_encontrada.obtener_asiento_por_id(asiento_id)
+                        if asiento:
+                            if asiento.está_disponible():
+                                asiento.reservar()
+                                reservas_aplicadas += 1
+                                # print(f"  Reserva aplicada: {nombre_peli} ({fecha_str}) en {nombre_sala}, Asiento: {asiento_id}")
+                            else:
+                                # El asiento ya estaba ocupado (quizás por duplicado en tickets.txt)
+                                # print(f"  Advertencia línea {i+1}: Asiento {asiento_id} para {nombre_peli} ({fecha_str}) ya estaba ocupado.")
+                                pass # No hacer nada si ya está reservado
+                        else:
+                            print(f"  Advertencia línea {i+1}: Asiento ID '{asiento_id}' no encontrado en función {nombre_peli} ({fecha_str}).")
+                    else:
+                        # La función para este tiquete ya no existe (ej. película vieja)
+                        # print(f"  Info línea {i+1}: Función {nombre_peli} ({fecha_str}) no encontrada en la programación actual.")
+                        pass
+
+                except ValueError as e:
+                    print(f"Error al procesar registro de tiquete (línea {i+1}): {record} -> {e}")
+                except Exception as e:
+                    print(f"Error inesperado procesando registro de tiquete (línea {i+1}): {record} -> {e}")
+            else:
+                print(f"Advertencia: Registro de tiquete ignorado por formato incorrecto (línea {i+1}): {record}")
+
+        print(f"Se aplicaron {reservas_aplicadas} reservas desde el archivo.")
+
 
 class TheaterGUI:
     """
@@ -658,6 +740,31 @@ class TheaterGUI:
         self.img_selected: Optional[ImageTk.PhotoImage] = None # Imagen para asiento seleccionado
         self._cargar_imagenes_asientos() # Llama a método helper
 
+        # --- Configuración de Estilos ttk ---
+        self.style = ttk.Style(self.root)
+        # Intentar obtener color de fondo base para consistencia
+        try:
+            default_bg = self.root.cget('bg')
+        except:
+            default_bg = '#f0f0f0' # Fallback si falla
+
+        # Estilo para botones de asiento (intentar quitar bordes/relieve)
+        self.style.configure("Seat.TButton",
+                             borderwidth=0,
+                             highlightthickness=0,
+                             relief='flat',
+                             anchor='center', # Centrar imagen/texto
+                             # background=default_bg # Background en ttk es complejo, depende del tema
+                             padding=0 # Intentar quitar padding interno
+                             )
+        # Podrías necesitar ajustar el layout si el padding persiste
+        # self.style.layout("Seat.TButton", [('Button.padding', {'sticky': 'nswe', 'children': [('Button.label', {'sticky': 'nswe'})]})])
+
+        # Estilo para Frames negros (Pantalla)
+        self.style.configure('Black.TFrame', background='black')
+
+        # (El estilo Selected.TButton no se usa activamente si cambiamos imagen manualmente)
+
         # --- Configuración del Layout Principal ---
         self._setup_gui_layout()
 
@@ -671,27 +778,24 @@ class TheaterGUI:
             # Cargar y redimensionar disponible y ocupado
             pil_avail = Image.open(SEAT_IMG_AVAILABLE).resize((SEAT_IMG_WIDTH, SEAT_IMG_HEIGHT), Image.Resampling.LANCZOS)
             pil_occup = Image.open(SEAT_IMG_OCCUPIED).resize((SEAT_IMG_WIDTH, SEAT_IMG_HEIGHT), Image.Resampling.LANCZOS)
+            pil_select = Image.open(SEAT_IMG_SELECTED).resize((SEAT_IMG_WIDTH, SEAT_IMG_HEIGHT), Image.Resampling.LANCZOS)
+            
             self.img_available = ImageTk.PhotoImage(pil_avail)
             self.img_occupied = ImageTk.PhotoImage(pil_occup)
-
-            # Crear imagen seleccionada (ej: disponible con borde amarillo)
-            # Esto requiere manipulación con Pillow, ejemplo básico:
-            try:
-                from PIL import ImageDraw
-                pil_select = pil_avail.copy()
-                draw = ImageDraw.Draw(pil_select)
-                # Dibuja un borde amarillo de 2px
-                draw.rectangle([(0, 0), (SEAT_IMG_WIDTH-1, SEAT_IMG_HEIGHT-1)], outline="gold", width=3)
-                self.img_selected = ImageTk.PhotoImage(pil_select)
-            except Exception as draw_err:
-                print(f"Advertencia: No se pudo crear imagen seleccionada con borde: {draw_err}. Se usará disponible.")
-                self.img_selected = self.img_available # Fallback
+            self.img_selected = ImageTk.PhotoImage(pil_select)
 
             print("Imágenes de asientos cargadas.")
-        except FileNotFoundError:
-            print(f"ERROR CRÍTICO: No se encontraron archivos de imagen ({SEAT_IMG_AVAILABLE}, etc.). La GUI no funcionará correctamente.")
+
+        except FileNotFoundError as e:
+            missing_file = e.filename 
+            print(f"ERROR CRÍTICO: No se encontraron archivos de imagen '{missing_file}', etc.). La GUI no funcionará correctamente.")
+        except ImportError:
+            print("Error: La biblioteca Pillow no está instalada ('pip install Pillow'). "
+               "Se usarán botones grises como fallback.")
+            self.img_available = self.img_occupied = self.img_selected = None
         except Exception as e:
             print(f"Error inesperado al cargar imágenes: {e}")
+            self.img_available = self.img_occupied = self.img_selected = None
 
     def _setup_gui_layout(self) -> None:
         """Configura la estructura principal de widgets de la GUI."""
@@ -873,15 +977,16 @@ class TheaterGUI:
         num_rows = len(seats_layout)
         max_seats_in_row = 11
         num_grid_cols = 1 + max_seats_in_row + 1
-        parent_bg_color = parent_frame.winfo_toplevel().cget('bg') # Obtener color de fondo raíz
-        self.mapa_widgets_asientos = {} # Limpiar mapa para esta función
+        # parent_bg_color = parent_frame.winfo_toplevel().cget('bg') # Ya no se usa para el botón
+
+        self.mapa_widgets_asientos = {} # Limpiar mapa
 
         # Frame para la grilla
-        grid_frame = ttk.Frame(parent_frame) # Usar ttk.Frame
+        grid_frame = ttk.Frame(parent_frame)
         grid_frame.pack(side='top', expand=True, pady=(20, 10))
 
         asiento_index = 0
-        asientos_de_la_funcion = funcion.teatro_funcion.asientos # Usar asientos de la copia
+        asientos_de_la_funcion = funcion.teatro_funcion.asientos
 
         # --- Dibujar Grilla ---
         for i in range(num_rows):
@@ -891,20 +996,16 @@ class TheaterGUI:
             end_col = start_col + num_seats_this_row - 1
 
             for j in range(num_grid_cols):
-                widget_to_place = None # Widget a colocar en la celda
+                # --- CORRECCIÓN UnboundLocalError ---
+                    seat_btn = None # Inicializar seat_btn fuera de los if/else
 
-                # Pasillos
-                if j == 0 or j == num_grid_cols - 1:
-                    widget_to_place = ttk.Frame(grid_frame, width=30, height=SEAT_IMG_HEIGHT+5)
-                # Asientos o Vacíos
-                else:
-                    if start_col <= j <= end_col: # Zona de asiento
+                    if start_col <= j <= end_col: # ¿Va un asiento aquí?
                         if asiento_index < len(asientos_de_la_funcion):
                             asiento = asientos_de_la_funcion[asiento_index]
                             is_available = asiento.está_disponible()
                             is_selected = asiento in self.asientos_seleccionados_para_compra
 
-                            img = None
+                            img = None # Determinar imagen a usar
                             if is_selected and self.img_selected:
                                 img = self.img_selected
                             elif not is_available and self.img_occupied:
@@ -912,47 +1013,51 @@ class TheaterGUI:
                             elif is_available and self.img_available:
                                 img = self.img_available
 
-                            btn_conf = {"borderwidth": 0, "highlightthickness": 0,
-                                        "relief": "flat", "style": "Seat.TButton"}
-                                        
-                            # Estilo base para botones de asiento (sin bordes)
-                            style = ttk.Style()
-                            style.configure("Seat.TButton", background=parent_bg_color, borderwidth=0, highlightthickness=0, relief='flat')
-                            # Estilo para asiento seleccionado
-                            style.map("Selected.TButton", background=[('active', 'gold'), ('!active', 'gold')]) # Ejemplo simple
-
+                            # Crear el botón SIN el command todavía
                             if img:
-                                seat_btn = ttk.Button(grid_frame, image=img, style="Seat.TButton",
-                                                      **btn_conf)
-                                seat_btn.image = img
+                                seat_btn = ttk.Button(grid_frame, image=img,
+                                                      style="Seat.TButton")
+                                seat_btn.image = img # Guardar referencia
                             else: # Fallback
-                                color = "red" if not is_available else "green"
-                                if is_selected: color = "gold"
-                                seat_btn = ttk.Button(grid_frame, text=asiento.id, # Usar ttk.Button
-                                                      style="Seat.TButton", # Aplicar estilo base
-                                                      width=5) # Ancho para texto
-                                # Necesitaría configurar colores directamente si no hay tema
-                                # seat_btn.configure(background=color) # No siempre funciona bien con ttk
+                                fb_text = asiento.id
+                                fb_style="Seat.TButton"
+                                if is_selected: fb_text = f"[{asiento.id}]"
+                                seat_btn = ttk.Button(grid_frame, text=fb_text,
+                                                      style=fb_style,
+                                                      width=5)
 
-                            seat_btn.config(command=lambda a=asiento, b=seat_btn: self.on_seat_click(a, b))
-                            widget_to_place = seat_btn
-                            self.mapa_widgets_asientos[asiento.id] = seat_btn # Guardar ref al widget
+                            # Si el botón se creó (no es None), configurar el command AHORA
+                            if seat_btn:
+                                seat_btn.config(command=lambda a=asiento, b=seat_btn: self.on_seat_click(a, b))
+                                self.mapa_widgets_asientos[asiento.id] = seat_btn # Guardar ref al widget
+
+                            widget_to_place = seat_btn # Usar seat_btn como el widget a colocar
                             asiento_index += 1
                         else: # Error
-                            widget_to_place = ttk.Frame(grid_frame, width=SEAT_IMG_WIDTH+5, height=SEAT_IMG_HEIGHT+5, style='Toolbutton') # Usar estilo base
-                            widget_to_place.configure(background='magenta') # Indicar error
-                    else: # Espacio vacío
-                        widget_to_place = ttk.Frame(grid_frame, width=SEAT_IMG_WIDTH+5, height=SEAT_IMG_HEIGHT+5, style='Toolbutton')
+                             print(f"Error Layout: Índice asiento {asiento_index} fuera de rango.")
+                             widget_to_place = ttk.Frame(grid_frame, width=SEAT_IMG_WIDTH+5, height=SEAT_IMG_HEIGHT+5)
+                             # widget_to_place.configure(background='magenta') # ttk style aplicado
+                    else: # Espacio vacío por indentación
+                        widget_to_place = ttk.Frame(grid_frame, width=SEAT_IMG_WIDTH+5, height=SEAT_IMG_HEIGHT+5)
 
-                # Colocar el widget en la grilla
-                if widget_to_place:
-                    widget_to_place.grid(row=i, column=j, padx=2, pady=2) # Reducir padding
-                    if isinstance(widget_to_place, ttk.Frame):
-                         widget_to_place.pack_propagate(False)
+                    # Colocar el widget en la grilla
+                    if widget_to_place:
+                        widget_to_place.grid(row=i, column=j, padx=2, pady=2)
+                        # Aplicar pack_propagate solo a los Frames (pasillos/vacíos)
+                        if isinstance(widget_to_place, ttk.Frame):
+                             widget_to_place.pack_propagate(False)
 
         if asiento_index != len(asientos_de_la_funcion):
-             print(f"Advertencia Layout: Se colocaron {asiento_index} asientos, "
-                   f"la función tiene {len(asientos_de_la_funcion)}.")
+             print(f"Advertencia Layout: Fila {i}, asientos colocados {asiento_index}/{len(asientos_de_la_funcion)}")
+
+# --- Importante: Asegúrate que on_seat_click actualiza la imagen manualmente ---
+# La lógica en on_seat_click que hace button.config(image=...) sigue siendo necesaria
+# porque la manipulación de estilos ttk para estados personalizados como 'seleccionado'
+# con imágenes es compleja y a veces no funciona como se espera. Cambiar la imagen
+# directamente es más fiable aquí.
+
+# También elimina la configuración de highlightthickness en on_seat_click si aún existe
+# (ya no es relevante para ttk y estaba ligada al modo dev)
 
 
     def on_seat_click(self, asiento: Asiento, button: ttk.Button) -> None:
@@ -992,8 +1097,9 @@ class TheaterGUI:
                     button.config(text=f"[{asiento.id}]") # Indicar selección
                     # Necesitaría configurar color si se usa fallback
         else:
-            # Si el asiento no está disponible (ya comprado), informar
-            messagebox.showinfo("Asiento Ocupado", f"El asiento {asiento.id} ya está ocupado para esta función.")
+            # Si el asiento NO está disponible (ya comprado), informar
+            if asiento not in self.asientos_seleccionados_para_compra:
+                messagebox.showinfo("Asiento Ocupado", f"El asiento {asiento.id} ya está ocupado para esta función.")
 
         # Actualizar la información de compra (costo, etc.)
         self._update_purchase_info()
@@ -1074,6 +1180,7 @@ def main() -> None:
     print("Iniciando aplicación Cine...")
     admin = Admin("Cine Cultural Barranquilla")
     admin.cargar_funciones_desde_archivo()
+    admin._aplicar_reservas_guardadas()
     root = tk.Tk()
     app = TheaterGUI(root, admin) # Crear la instancia de la GUI
     root.mainloop() # Iniciar el bucle de eventos de Tkinter
