@@ -25,10 +25,11 @@ Fecha: 2025-04-27 (Fecha de esta versión)
 """
 
 import tkinter as tk
-from tkinter import ttk # ttk no se usa activamente aún, pero está importado
-from datetime import datetime, timedelta
+from tkinter import ttk, messagebox, simpledialog # ttk no se usa activamente aún, pero está importado
+from datetime import datetime, timedelta, date
 from typing import List, Optional, Dict, Tuple
 from PIL import Image, ImageTk # Necesita 'pip install Pillow'
+import copy
 
 # --- Constantes ---
 MOVIE_DATA_FILE = 'movies.txt'  # Archivo de datos de funciones
@@ -39,7 +40,7 @@ SEAT_IMG_OCCUPIED = "seat_occupied.png"
 SEAT_IMG_WIDTH = 40
 SEAT_IMG_HEIGHT = 40
 DEFAULT_THEATER_NAMES = ['Sala 1', 'Sala 2', 'Sala 3']
-
+PRECIO_TIQUETE = 15000 # Precio estándar por tiquete
 
 class Asiento:
     """Representa un único asiento en una sala de cine."""
@@ -181,22 +182,18 @@ class Funcion:
                              o que será gestionado externamente.
         """
         self.pelicula = pelicula
-        # TODO: Considerar si Función debería tener su *propia copia*
-        # del estado de los asientos del teatro para esa hora específica,
-        # en lugar de depender del estado global del objeto Teatro.
-        self.teatro = teatro
+        self.teatro_funcion = copy.deepcopy(teatro)
         self.fecha = fecha
-        # Define un límite (ej. 30 min después del inicio) - Uso potencial futuro
-        self.fechaLimite = fecha + timedelta(minutes=30)
+        self.fechaLimite = fecha + timedelta(minutes=30) # Límite de 30 min post-incio
 
     def obtener_informacion(self) -> str:
         """Devuelve una cadena con los detalles de la función."""
-        return f"{self.pelicula.nombre} en {self.teatro.nombre} - {self.fecha.strftime('%Y-%m-%d %H:%M')}"
+        return f"{self.pelicula.nombre} en {self.teatro_funcion.nombre} - {self.fecha.strftime('%Y-%m-%d %H:%M')}"
 
     def reiniciar_asientos_asociados(self) -> None:
         """Reinicia el estado de los asientos en el Teatro asociado a esta función."""
         # CUIDADO: Esto afecta al objeto Teatro compartido. Ver TODO en __init__.
-        self.teatro.reiniciar()
+        self.teatro_funcion.reiniciar()
 
     def fechaLimite_pasada(self) -> bool:
         """Verifica si la fecha límite para esta función ya pasó."""
@@ -205,7 +202,14 @@ class Funcion:
     def obtener_asientos_disponibles(self) -> List[Asiento]:
          """Obtiene los asientos disponibles DEL TEATRO asociado."""
          # CUIDADO: Devuelve disponibilidad global del teatro, no específica de la función. Ver TODO.
-         return self.teatro.obtener_asientos_disponibles()
+         return self.teatro_funcion.obtener_asientos_disponibles()
+    
+    def obtener_asiento_por_id(self, id_asiento: str) -> Optional[Asiento]:
+         """Busca un asiento por ID DENTRO de esta función."""
+         for asiento in self.teatro_funcion.asientos:
+              if asiento.id == id_asiento:
+                   return asiento
+         return None
 
     def esta_disponible_en_fecha(self, tiempoDeReferencia: datetime) -> bool:
         """Verifica si la función aún no ha comenzado respecto a un tiempo dado."""
@@ -498,7 +502,7 @@ class Admin:
 
         # 1. Verificar disponibilidad y obtener objetos Asiento
         for asiento_id in ids_asientos:
-            asiento = funcion.teatro.obtener_asiento_por_id(asiento_id)
+            asiento = funcion.obtener_asiento_por_id(asiento_id)
             if asiento is None:
                 raise ValueError(f"El asiento con ID '{asiento_id}' no existe en la sala '{funcion.teatro.nombre}'.")
             if not asiento.está_disponible():
@@ -626,295 +630,452 @@ class Admin:
 
 
 class TheaterGUI:
-    """Interfaz gráfica principal para la aplicación del cine."""
+    """
+    Interfaz gráfica principal para la aplicación del cine.
+    Permite visualizar funciones, seleccionar asientos y comprar tiquetes.
+    """
 
-    def __init__(self, root: tk.Tk):
+    def __init__(self, root: tk.Tk, admin_instance: Admin):
         """
         Inicializa la interfaz gráfica.
 
         Args:
             root (tk.Tk): La ventana raíz de Tkinter.
+            admin_instance (Admin): La instancia del gestor de lógica del cine.
         """
         self.root = root
-        self.root.title("Cine Cultural Barranquilla")
-        self.root.geometry("1280x720") # Tamaño ventana principal
+        self.admin = admin_instance
+        self.funcion_seleccionada: Optional[Funcion] = None
+        self.asientos_seleccionados_para_compra: List[Asiento] = [] # Asientos marcados para comprar
+        self.mapa_widgets_asientos: Dict[str, ttk.Button] = {} # Mapea asiento.id -> widget Button
 
-        # --- Carga de Imágenes para Asientos ---
-        self.img_available = None
-        self.img_occupied = None
+        self.root.title("Cine Cultural Barranquilla - Taquilla")
+        self.root.geometry("1280x768") # Un poco más alto para info de compra
+
+        # --- Carga de Imágenes ---
+        self.img_available: Optional[ImageTk.PhotoImage] = None
+        self.img_occupied: Optional[ImageTk.PhotoImage] = None
+        self.img_selected: Optional[ImageTk.PhotoImage] = None # Imagen para asiento seleccionado
+        self._cargar_imagenes_asientos() # Llama a método helper
+
+        # --- Configuración del Layout Principal ---
+        self._setup_gui_layout()
+
+        # --- Carga Inicial ---
+        # Cargar funciones para la fecha actual al iniciar
+        self._on_date_filter_apply()
+
+    def _cargar_imagenes_asientos(self) -> None:
+        """Carga las imágenes de los asientos desde archivos."""
         try:
-            # Abrir imágenes originales con Pillow
-            pil_img_available = Image.open(SEAT_IMG_AVAILABLE)
-            pil_img_occupied = Image.open(SEAT_IMG_OCCUPIED)
+            # Cargar y redimensionar disponible y ocupado
+            pil_avail = Image.open(SEAT_IMG_AVAILABLE).resize((SEAT_IMG_WIDTH, SEAT_IMG_HEIGHT), Image.Resampling.LANCZOS)
+            pil_occup = Image.open(SEAT_IMG_OCCUPIED).resize((SEAT_IMG_WIDTH, SEAT_IMG_HEIGHT), Image.Resampling.LANCZOS)
+            self.img_available = ImageTk.PhotoImage(pil_avail)
+            self.img_occupied = ImageTk.PhotoImage(pil_occup)
 
-            # Redimensionar si es necesario (ej. a 40x40 píxeles)
-            pil_img_available = pil_img_available.resize(
-                (SEAT_IMG_WIDTH, SEAT_IMG_HEIGHT), Image.Resampling.LANCZOS
-            )
-            pil_img_occupied = pil_img_occupied.resize(
-                (SEAT_IMG_WIDTH, SEAT_IMG_HEIGHT), Image.Resampling.LANCZOS
-            )
+            # Crear imagen seleccionada (ej: disponible con borde amarillo)
+            # Esto requiere manipulación con Pillow, ejemplo básico:
+            try:
+                from PIL import ImageDraw
+                pil_select = pil_avail.copy()
+                draw = ImageDraw.Draw(pil_select)
+                # Dibuja un borde amarillo de 2px
+                draw.rectangle([(0, 0), (SEAT_IMG_WIDTH-1, SEAT_IMG_HEIGHT-1)], outline="gold", width=3)
+                self.img_selected = ImageTk.PhotoImage(pil_select)
+            except Exception as draw_err:
+                print(f"Advertencia: No se pudo crear imagen seleccionada con borde: {draw_err}. Se usará disponible.")
+                self.img_selected = self.img_available # Fallback
 
-            # Convertir a formato Tkinter y guardar
-            self.img_available = ImageTk.PhotoImage(pil_img_available)
-            self.img_occupied = ImageTk.PhotoImage(pil_img_occupied)
-            print("Imágenes de asientos cargadas correctamente.")
-
+            print("Imágenes de asientos cargadas.")
         except FileNotFoundError:
-            print(f"Error: No se encontraron archivos de imagen ({SEAT_IMG_AVAILABLE}, {SEAT_IMG_OCCUPIED}). "
-                  "Se usarán botones grises como fallback.")
-        except ImportError:
-             print("Error: La biblioteca Pillow no está instalada ('pip install Pillow'). "
-                   "Se usarán botones grises como fallback.")
+            print(f"ERROR CRÍTICO: No se encontraron archivos de imagen ({SEAT_IMG_AVAILABLE}, etc.). La GUI no funcionará correctamente.")
         except Exception as e:
-             print(f"Error inesperado al cargar imágenes: {e}")
+            print(f"Error inesperado al cargar imágenes: {e}")
 
-
-        # --- Gestión de Salas (Versión GUI Desacoplada) ---
-        # TODO: Esta GUI crea sus propias instancias de Teatro.
-        # NECESITA conectarse con la instancia de Admin para obtener
-        # las salas reales, las funciones y el estado de los asientos
-        # actualizado según la función seleccionada.
-        print("\n*** ADVERTENCIA: La GUI opera con datos de sala locales. "
-              "No conectada a la lógica de Admin/Funciones/Reservas reales. ***\n")
-        self.salas = [Teatro(nombre) for nombre in DEFAULT_THEATER_NAMES]
-        self.sala_actual_idx = 0 # Índice de la sala mostrada actualmente
-
-        # --- Estado del Modo Desarrollador ---
-        self.developer_mode_enabled = False
-
-        # --- Configuración del Layout Principal de la GUI ---
-        # Permitir que la fila central (1) se expanda
-        self.root.rowconfigure(1, weight=1)
-        # Permitir que la columna única (0) se expanda
+    def _setup_gui_layout(self) -> None:
+        """Configura la estructura principal de widgets de la GUI."""
+        self.root.rowconfigure(1, weight=1) # Permitir que fila de contenido principal crezca
         self.root.columnconfigure(0, weight=1)
 
-        # --- Barra de Menú Superior ---
-        self.menu_frame = tk.Frame(self.root, bg='#e0e0e0', height=50)
-        self.menu_frame.grid(row=0, column=0, sticky='ew') # Ocupa todo el ancho
-        # Evitar que los widgets internos redimensionen el frame
-        self.menu_frame.pack_propagate(False)
+        # --- Frame Superior (Filtros) ---
+        filter_frame = ttk.Frame(self.root, padding="10")
+        filter_frame.grid(row=0, column=0, sticky='ew')
 
-        # Crear botones para cada sala
-        for idx, sala in enumerate(self.salas):
-            btn = tk.Button(
-                self.menu_frame,
-                text=sala.nombre,
-                command=lambda i=idx: self.mostrar_sala(i) # Lambda para pasar el índice correcto
-            )
-            btn.pack(side='left', padx=10, pady=10) # Empaquetar a la izquierda
+        ttk.Label(filter_frame, text="Fecha (DD/MM/YYYY):").pack(side='left', padx=(0, 5))
+        self.date_entry_var = tk.StringVar(value=datetime.now().strftime('%d/%m/%Y'))
+        date_entry = ttk.Entry(filter_frame, textvariable=self.date_entry_var, width=12)
+        date_entry.pack(side='left', padx=5)
+        # TODO: Añadir validación o un widget de calendario para la fecha
 
-        # Botón para activar/desactivar Modo Desarrollador
-        self.dev_mode_button = tk.Button(
-            self.menu_frame,
-            text="Activar Modo Dev",
-            command=self.toggle_developer_mode
-        )
-        self.dev_mode_button.pack(side='right', padx=10, pady=10) # Empaquetar a la derecha
+        search_button = ttk.Button(filter_frame, text="Buscar Funciones", command=self._on_date_filter_apply)
+        search_button.pack(side='left', padx=5)
 
-        # --- Zona de Contenido Central ---
-        # Frame donde se dibujarán los asientos y la pantalla
-        self.content_frame = tk.Frame(self.root, bg='#f8f8f8')
-        self.content_frame.grid(row=1, column=0, sticky='nsew') # Ocupa el espacio central
+        # --- Frame Principal (Funciones y Asientos) ---
+        # Usar PanedWindow permite redimensionar las áreas
+        main_pane = ttk.PanedWindow(self.root, orient='horizontal')
+        main_pane.grid(row=1, column=0, sticky='nsew', padx=10, pady=5)
 
-        # --- Barra de Estado Inferior ---
-        self.status_frame = tk.Frame(self.root, bg='#e0e0e0', height=30)
-        self.status_frame.grid(row=2, column=0, sticky='ew') # Ocupa todo el ancho
-        self.status_frame.pack_propagate(False) # Evitar redimensión
+        # Frame Izquierdo: Lista de Funciones
+        functions_frame = ttk.Frame(main_pane, padding="5")
+        main_pane.add(functions_frame, weight=1) # Añadir al PanedWindow
 
-        # Etiqueta para mostrar mensajes de estado
-        self.status_label = tk.Label(self.status_frame, text="Listo.", anchor='w', bg='#e0e0e0')
-        self.status_label.pack(fill='both', padx=10)
+        ttk.Label(functions_frame, text="Funciones Disponibles", font=('Calibri', 12, 'bold')).pack(pady=5)
+        
+        # Treeview para mostrar funciones
+        cols = ('pelicula', 'hora', 'sala')
+        self.functions_treeview = ttk.Treeview(functions_frame, columns=cols, show='headings', height=15)
+        self.functions_treeview.heading('pelicula', text='Película')
+        self.functions_treeview.heading('hora', text='Hora')
+        self.functions_treeview.heading('sala', text='Sala')
+        self.functions_treeview.column('pelicula', width=200)
+        self.functions_treeview.column('hora', width=80, anchor='center')
+        self.functions_treeview.column('sala', width=100, anchor='center')
 
-        # --- Inicialización Visual ---
-        # Mostrar la primera sala al iniciar la aplicación
-        self.mostrar_sala(self.sala_actual_idx)
+        # Scrollbar para el Treeview
+        scrollbar = ttk.Scrollbar(functions_frame, orient='vertical', command=self.functions_treeview.yview)
+        self.functions_treeview.configure(yscrollcommand=scrollbar.set)
+
+        self.functions_treeview.pack(side='left', fill='both', expand=True)
+        scrollbar.pack(side='right', fill='y')
+
+        # Evento al seleccionar una función en el Treeview
+        self.functions_treeview.bind('<<TreeviewSelect>>', self._on_function_select)
+
+        # Frame Derecho: Mapa de Asientos y Pantalla
+        self.seat_area_frame = ttk.Frame(main_pane, padding="5")
+        main_pane.add(self.seat_area_frame, weight=3) # Dar más peso al área de asientos
+
+        # --- Frame Inferior (Compra y Estado) ---
+        purchase_status_frame = ttk.Frame(self.root, padding="5 10 5 10") # padding left, top, right, bottom
+        purchase_status_frame.grid(row=2, column=0, sticky='ew')
+
+        # Info de compra
+        self.purchase_info_label = ttk.Label(purchase_status_frame, text="Seleccione una función y asientos.", anchor='w')
+        self.purchase_info_label.pack(side='left', fill='x', expand=True, padx=5)
+
+        # Botón Comprar
+        buy_button = ttk.Button(purchase_status_frame, text="Comprar Entradas", command=self._confirm_purchase)
+        buy_button.pack(side='right', padx=5)
+
+        # (Opcional: Botón Modo Dev si aún lo quieres)
+        # self.dev_mode_button = ttk.Button(...)
+
+    def _on_date_filter_apply(self) -> None:
+        """Obtiene la fecha, busca funciones y las muestra en el Treeview."""
+        date_str = self.date_entry_var.get()
+        try:
+            # Validar y parsear fecha
+            selected_date = datetime.strptime(date_str, '%d/%m/%Y')
+            print(f"Buscando funciones para: {selected_date.strftime('%Y-%m-%d')}")
+
+            # Obtener funciones del Admin
+            # Pide sólo las futuras para hoy por defecto
+            funciones = self.admin.get_funciones_disponibles_por_fecha(selected_date, incluir_pasadas_hoy=False)
+
+            # Limpiar vista de funciones
+            for item in self.functions_treeview.get_children():
+                self.functions_treeview.delete(item)
+            
+            # Limpiar área de asientos y selección actual
+            self._clear_seat_display()
+            self.funcion_seleccionada = None
+            self.asientos_seleccionados_para_compra = []
+            self._update_purchase_info() # Resetear info de compra
+
+            # Poblar Treeview
+            self.function_map = {} # Diccionario para mapear iid -> Funcion object
+            if funciones:
+                for func in funciones:
+                    # Insertar fila en el treeview
+                    iid = self.functions_treeview.insert('', 'end', values=(
+                        func.pelicula.nombre,
+                        func.fecha.strftime('%H:%M'),
+                        func.teatro_funcion.nombre # Usa la copia profunda
+                    ))
+                    # Guardar el objeto Funcion asociado a este item id
+                    self.function_map[iid] = func
+            else:
+                self.functions_treeview.insert('', 'end', values=("No hay funciones", "para esta fecha", ""))
+                
+        except ValueError:
+            messagebox.showerror("Error de Fecha", "Formato de fecha inválido. Use DD/MM/YYYY.")
+            self._clear_seat_display()
+        except Exception as e:
+            messagebox.showerror("Error Inesperado", f"Ocurrió un error al buscar funciones: {e}")
+            self._clear_seat_display()
 
 
-    def toggle_developer_mode(self) -> None:
-        """Activa o desactiva el modo desarrollador y actualiza la GUI."""
-        self.developer_mode_enabled = not self.developer_mode_enabled
-        status_msg = "ACTIVADO" if self.developer_mode_enabled else "DESACTIVADO"
-        button_txt = "Desactivar Modo Dev" if self.developer_mode_enabled else "Activar Modo Dev"
-
-        self.dev_mode_button.config(text=button_txt)
-        self.status_label.config(text=f"Modo Desarrollador {status_msg}")
-        print(f"Modo Desarrollador: {status_msg}")
-
-        # Volver a dibujar la sala actual para aplicar/quitar el estilo Dev
-        self.mostrar_sala(self.sala_actual_idx)
-
-
-    def mostrar_sala(self, idx: int) -> None:
-        """
-        Limpia el frame de contenido y muestra la pantalla y los asientos
-        de la sala con el índice proporcionado.
-
-        Args:
-            idx (int): Índice de la sala a mostrar (en la lista self.salas).
-        """
-        # 1. Validar índice
-        if not 0 <= idx < len(self.salas):
-            print(f"Error: Índice de sala {idx} fuera de rango.")
+    def _on_function_select(self, event=None) -> None:
+        """Manejador cuando se selecciona una función en el Treeview."""
+        selected_items = self.functions_treeview.selection()
+        if not selected_items: # Si no hay selección (ej. al limpiar)
+            self.funcion_seleccionada = None
+            self._clear_seat_display()
             return
 
-        # 2. Limpiar contenido anterior del frame central
-        for widget in self.content_frame.winfo_children():
+        selected_iid = selected_items[0] # Tomar el primero seleccionado
+
+        # Recuperar el objeto Funcion usando el mapa
+        selected_function = self.function_map.get(selected_iid)
+
+        if selected_function:
+            self.funcion_seleccionada = selected_function
+            print(f"Función seleccionada: {self.funcion_seleccionada}")
+            self.asientos_seleccionados_para_compra = [] # Limpiar selección anterior
+            self._update_seat_display() # Mostrar asientos de esta función
+            self._update_purchase_info() # Actualizar info de compra (costo 0)
+        else:
+            print(f"Error: No se encontró el objeto Funcion para iid {selected_iid}")
+            self.funcion_seleccionada = None
+            self._clear_seat_display()
+
+    def _clear_seat_display(self) -> None:
+        """Limpia el área de visualización de asientos."""
+        for widget in self.seat_area_frame.winfo_children():
+            widget.destroy()
+        # Podrías poner un Label indicando "Seleccione una función"
+        ttk.Label(self.seat_area_frame, text="Seleccione una función para ver los asientos.").pack(padx=20, pady=50)
+
+    def _update_seat_display(self) -> None:
+        """Limpia y vuelve a dibujar el área de asientos para la función seleccionada."""
+        # 1. Limpiar el frame derecho
+        for widget in self.seat_area_frame.winfo_children():
             widget.destroy()
 
-        # 3. Obtener la sala y actualizar estado
-        sala = self.salas[idx]
-        self.sala_actual_idx = idx
-        mode_text = "(Modo Dev)" if self.developer_mode_enabled else ""
-        self.status_label.config(text=f"Mostrando {sala.nombre} {mode_text}")
+        # 2. Verificar si hay una función seleccionada
+        if not self.funcion_seleccionada:
+            self._clear_seat_display() # Muestra mensaje "Seleccione función"
+            return
 
-        # 4. Dibujar la Pantalla (abajo)
-        screen_frame = tk.Frame(self.content_frame, bg='black', height=20)
-        screen_frame.pack(side='bottom', fill='x', padx=50, pady=(10, 20)) # pady=(top, bottom)
-        screen_label = tk.Label(screen_frame, text="PANTALLA", bg='black', fg='white', font=('Calibri', 10, 'bold'))
-        screen_label.pack(pady=2)
+        # 3. Dibujar la Pantalla (abajo del seat_area_frame)
+        screen_frame = ttk.Frame(self.seat_area_frame, style='Black.TFrame') # Estilo para fondo negro
+        self.root.style = ttk.Style()
+        self.root.style.configure('Black.TFrame', background='black')
+        screen_frame.pack(side='bottom', fill='x', padx=50, pady=(10, 20))
+        ttk.Label(screen_frame, text="PANTALLA", background='black', foreground='white', font=('Calibri', 10, 'bold')).pack(pady=2)
 
-        # 5. Dibujar los Asientos (arriba de la pantalla)
-        self.mostrar_asientos(self.content_frame, sala)
+        # 4. Dibujar los Asientos (arriba de la pantalla)
+        self.mostrar_asientos(self.seat_area_frame, self.funcion_seleccionada)
 
 
-    def mostrar_asientos(self, parent_frame: tk.Frame, sala: Teatro) -> None:
+    def mostrar_asientos(self, parent_frame: tk.Frame, funcion: Funcion) -> None:
         """
-        Dibuja la cuadrícula de asientos para la sala dada en el frame padre,
-        usando el layout realista definido internamente.
+        Dibuja la cuadrícula de asientos para la FUNCIÓN dada en el frame padre.
+        Usa el layout realista definido y el estado de asientos de funcion.teatro_funcion.
 
         Args:
-            parent_frame (tk.Frame): El frame donde se dibujará la cuadrícula de asientos.
-            sala (Teatro): La instancia de Teatro (local de la GUI) cuyos asientos se mostrarán.
+            parent_frame (tk.Frame): Frame donde dibujar (seat_area_frame).
+            funcion (Funcion): La función específica cuyos asientos se mostrarán.
         """
-
-        # --- Definición del Layout Realista (80 asientos) ---
-        seats_layout = [11]*2 + [9]*2 + [7]*5 + [5]*1  # 10 filas
+        # --- Layout y Configuración ---
+        seats_layout = [11]*2 + [9]*2 + [7]*5 + [5]*1
         num_rows = len(seats_layout)
         max_seats_in_row = 11
-        num_grid_cols = 1 + max_seats_in_row + 1 # 13 columnas (Pasillo + MaxAsientos + Pasillo)
+        num_grid_cols = 1 + max_seats_in_row + 1
+        parent_bg_color = parent_frame.winfo_toplevel().cget('bg') # Obtener color de fondo raíz
+        self.mapa_widgets_asientos = {} # Limpiar mapa para esta función
 
-        parent_bg_color = parent_frame['bg'] # Color de fondo para widgets internos
+        # Frame para la grilla
+        grid_frame = ttk.Frame(parent_frame) # Usar ttk.Frame
+        grid_frame.pack(side='top', expand=True, pady=(20, 10))
 
-        # Frame contenedor para la grilla de asientos, centrado
-        grid_frame = tk.Frame(parent_frame, bg=parent_bg_color)
-        grid_frame.pack(side='top', expand=True, pady=(20, 10)) # Empaquetar arriba
+        asiento_index = 0
+        asientos_de_la_funcion = funcion.teatro_funcion.asientos # Usar asientos de la copia
 
-        asiento_index = 0 # Para recorrer la lista sala.asientos
-
-        # --- Iterar y colocar cada elemento en la grilla ---
-        for i in range(num_rows): # Filas 0 a 9
+        # --- Dibujar Grilla ---
+        for i in range(num_rows):
             num_seats_this_row = seats_layout[i]
-            indent_each_side = (max_seats_in_row - num_seats_this_row) // 2
-            start_seat_col = 1 + indent_each_side
-            end_seat_col = start_seat_col + num_seats_this_row - 1
+            indent = (max_seats_in_row - num_seats_this_row) // 2
+            start_col = 1 + indent
+            end_col = start_col + num_seats_this_row - 1
 
-            for j in range(num_grid_cols): # Columnas 0 a 12
-                # Colocar Pasillo Izquierdo
-                if j == 0:
-                    aisle_widget = tk.Frame(grid_frame, width=30, height=SEAT_IMG_HEIGHT+10, bg=parent_bg_color)
-                # Colocar Pasillo Derecho
-                elif j == num_grid_cols - 1:
-                    aisle_widget = tk.Frame(grid_frame, width=30, height=SEAT_IMG_HEIGHT+10, bg=parent_bg_color)
-                # Colocar Asiento o Espacio Vacío
+            for j in range(num_grid_cols):
+                widget_to_place = None # Widget a colocar en la celda
+
+                # Pasillos
+                if j == 0 or j == num_grid_cols - 1:
+                    widget_to_place = ttk.Frame(grid_frame, width=30, height=SEAT_IMG_HEIGHT+5)
+                # Asientos o Vacíos
                 else:
-                    if start_seat_col <= j <= end_seat_col: # ¿Va un asiento aquí?
-                        if asiento_index < len(sala.asientos):
-                            asiento = sala.asientos[asiento_index]
-                            img = self.img_occupied if not asiento.está_disponible() else self.img_available
-                            
-                            # Configuración base del botón (sin borde, fondo correcto)
-                            btn_conf = { "borderwidth": 0, "highlightthickness": 0,
-                                         "relief": "flat", "bg": parent_bg_color,
-                                         "activebackground": parent_bg_color }
+                    if start_col <= j <= end_col: # Zona de asiento
+                        if asiento_index < len(asientos_de_la_funcion):
+                            asiento = asientos_de_la_funcion[asiento_index]
+                            is_available = asiento.está_disponible()
+                            is_selected = asiento in self.asientos_seleccionados_para_compra
 
-                            if img: # Si las imágenes se cargaron bien
-                                seat_widget = tk.Button(grid_frame, image=img,
-                                                        width=SEAT_IMG_WIDTH, height=SEAT_IMG_HEIGHT,
-                                                        **btn_conf)
-                                seat_widget.image = img # Guardar referencia!
-                            else: # Fallback si no hay imágenes
-                                color = "red" if not asiento.está_disponible() else "green"
-                                seat_widget = tk.Button(grid_frame, text=asiento.id, bg=color,
-                                                        width=4, height=2, relief='ridge')
+                            img = None
+                            if is_selected and self.img_selected:
+                                img = self.img_selected
+                            elif not is_available and self.img_occupied:
+                                img = self.img_occupied
+                            elif is_available and self.img_available:
+                                img = self.img_available
 
-                            # Configuración común (comando, estado dev)
-                            seat_widget.config(state='normal')
-                            seat_widget.config(command=lambda a=asiento, b=seat_widget: self.on_seat_click(a, b))
-                            if self.developer_mode_enabled:
-                                seat_widget.config(highlightthickness=1, highlightbackground="blue")
+                            btn_conf = {"borderwidth": 0, "highlightthickness": 0,
+                                        "relief": "flat", "style": "Seat.TButton"}
+                                        
+                            # Estilo base para botones de asiento (sin bordes)
+                            style = ttk.Style()
+                            style.configure("Seat.TButton", background=parent_bg_color, borderwidth=0, highlightthickness=0, relief='flat')
+                            # Estilo para asiento seleccionado
+                            style.map("Selected.TButton", background=[('active', 'gold'), ('!active', 'gold')]) # Ejemplo simple
 
+                            if img:
+                                seat_btn = ttk.Button(grid_frame, image=img, style="Seat.TButton",
+                                                      **btn_conf)
+                                seat_btn.image = img
+                            else: # Fallback
+                                color = "red" if not is_available else "green"
+                                if is_selected: color = "gold"
+                                seat_btn = ttk.Button(grid_frame, text=asiento.id, # Usar ttk.Button
+                                                      style="Seat.TButton", # Aplicar estilo base
+                                                      width=5) # Ancho para texto
+                                # Necesitaría configurar colores directamente si no hay tema
+                                # seat_btn.configure(background=color) # No siempre funciona bien con ttk
+
+                            seat_btn.config(command=lambda a=asiento, b=seat_btn: self.on_seat_click(a, b))
+                            widget_to_place = seat_btn
+                            self.mapa_widgets_asientos[asiento.id] = seat_btn # Guardar ref al widget
                             asiento_index += 1
-                        else: # Error: layout pide más asientos de los que hay
-                             print(f"Error Layout: Índice asiento {asiento_index} fuera de rango.")
-                             seat_widget = tk.Frame(grid_frame, width=SEAT_IMG_WIDTH+5, height=SEAT_IMG_HEIGHT+5, bg="magenta") # Error visual
-                    else: # Espacio vacío por indentación
-                        seat_widget = tk.Frame(grid_frame, width=SEAT_IMG_WIDTH+5, height=SEAT_IMG_HEIGHT+5, bg=parent_bg_color)
-                    
-                    # Colocar el widget (asiento, vacío, pasillo) en la grilla
-                    seat_widget.grid(row=i, column=j, padx=5, pady=5)
-                    if isinstance(seat_widget, tk.Frame): # Evitar que Frames se encojan
-                         seat_widget.pack_propagate(False)
+                        else: # Error
+                            widget_to_place = ttk.Frame(grid_frame, width=SEAT_IMG_WIDTH+5, height=SEAT_IMG_HEIGHT+5, style='Toolbutton') # Usar estilo base
+                            widget_to_place.configure(background='magenta') # Indicar error
+                    else: # Espacio vacío
+                        widget_to_place = ttk.Frame(grid_frame, width=SEAT_IMG_WIDTH+5, height=SEAT_IMG_HEIGHT+5, style='Toolbutton')
+
+                # Colocar el widget en la grilla
+                if widget_to_place:
+                    widget_to_place.grid(row=i, column=j, padx=2, pady=2) # Reducir padding
+                    if isinstance(widget_to_place, ttk.Frame):
+                         widget_to_place.pack_propagate(False)
+
+        if asiento_index != len(asientos_de_la_funcion):
+             print(f"Advertencia Layout: Se colocaron {asiento_index} asientos, "
+                   f"la función tiene {len(asientos_de_la_funcion)}.")
 
 
-        # Verificar si se usaron todos los asientos esperados
-        if asiento_index != DEFAULT_SEATS_PER_THEATER:
-            print(f"Advertencia: Layout finalizó usando {asiento_index} asientos, "
-                  f"se esperaban {DEFAULT_SEATS_PER_THEATER}.")
-
-
-    def on_seat_click(self, asiento: Asiento, button: tk.Button) -> None:
+    def on_seat_click(self, asiento: Asiento, button: ttk.Button) -> None:
         """
-        Manejador de eventos para el clic en un botón de asiento.
-        Si el modo desarrollador está activo, cambia el estado del asiento (visual).
-        Si no, muestra información (lógica de selección/compra futura aquí).
-
-        Args:
-            asiento (Asiento): La instancia del asiento asociado al botón clickeado.
-            button (tk.Button): El widget del botón que fue clickeado.
+        Manejador de clic en asiento para selección/deselección de compra.
         """
-        print(f"Clic en asiento: {asiento.id}, Disponible: {asiento.está_disponible()}")
+        if not self.funcion_seleccionada:
+            messagebox.showwarning("Selección Requerida", "Por favor, seleccione primero una función.")
+            return
 
-        if self.developer_mode_enabled:
-            # --- Modo Desarrollador: Cambiar Estado (Visualmente) ---
-            
-            # Cambiar estado directamente en el objeto asiento (de la GUI local)
-            if asiento.está_disponible():
-                asiento.disponible = False
-                nueva_imagen = self.img_occupied
-                nuevo_estado_str = "Ocupado (Dev)"
-                color_fallback = "red"
+        # Verificar si la función ya pasó el límite de tiempo para comprar/seleccionar
+        if self.funcion_seleccionada.fechaLimite_pasada():
+             messagebox.showwarning("Tiempo Excedido", "El tiempo para comprar entradas para esta función ha expirado.")
+             return
+
+        # Verificar si el asiento está realmente disponible EN ESTA FUNCIÓN
+        # (El objeto 'asiento' viene de la copia profunda de la función)
+        if asiento.está_disponible():
+            if asiento in self.asientos_seleccionados_para_compra:
+                # --- Deseleccionar ---
+                self.asientos_seleccionados_para_compra.remove(asiento)
+                # Cambiar imagen a disponible normal
+                if self.img_available:
+                    button.config(image=self.img_available)
+                    button.image = self.img_available
+                else: # Fallback
+                    button.config(text=asiento.id) # Quitar estilo seleccionado
+                    # Necesitaría reconfigurar color si se usa fallback
             else:
-                asiento.disponible = True
-                nueva_imagen = self.img_available
-                nuevo_estado_str = "Disponible (Dev)"
-                color_fallback = "green"
-
-            # Actualizar apariencia del botón específico
-            if self.img_available and self.img_occupied:
-                 button.config(image=nueva_imagen)
-                 button.image = nueva_imagen # ¡Actualizar referencia!
-            else: # Actualizar fallback
-                 button.config(bg=color_fallback, text=asiento.id)
-
-            self.status_label.config(text=f"DevMode: Asiento {asiento.id} -> {nuevo_estado_str}")
-
+                # --- Seleccionar ---
+                self.asientos_seleccionados_para_compra.append(asiento)
+                # Cambiar imagen a seleccionada
+                if self.img_selected:
+                    button.config(image=self.img_selected)
+                    button.image = self.img_selected
+                else: # Fallback
+                    button.config(text=f"[{asiento.id}]") # Indicar selección
+                    # Necesitaría configurar color si se usa fallback
         else:
-            # --- Modo Normal: Lógica de Selección (Futura) ---
-            # TODO: Implementar la selección de asientos para compra.
-            # - Marcar visualmente el asiento seleccionado (ej. borde diferente).
-            # - Añadir/quitar asiento de una lista de selección temporal.
-            # - Mostrar información del asiento/precio.
-            estado = "Disponible" if asiento.está_disponible() else "Ocupado"
-            self.status_label.config(text=f"Asiento {asiento.id} ({estado}). "
-                                           "Seleccione asientos y pulse 'Comprar' (no implementado).")
+            # Si el asiento no está disponible (ya comprado), informar
+            messagebox.showinfo("Asiento Ocupado", f"El asiento {asiento.id} ya está ocupado para esta función.")
 
+        # Actualizar la información de compra (costo, etc.)
+        self._update_purchase_info()
+
+
+    def _update_purchase_info(self) -> None:
+        """Actualiza la etiqueta inferior con el número de asientos y costo."""
+        num_seleccionados = len(self.asientos_seleccionados_para_compra)
+        if num_seleccionados > 0:
+            costo_total = num_seleccionados * PRECIO_TIQUETE
+            ids_texto = ", ".join(sorted([a.id for a in self.asientos_seleccionados_para_compra]))
+            self.purchase_info_label.config(
+                text=f"Seleccionados: {num_seleccionados} ({ids_texto}) - Total: ${costo_total:,.0f} COP"
+            )
+        else:
+            self.purchase_info_label.config(text="Seleccione asientos haciendo clic.")
+
+
+    def _confirm_purchase(self) -> None:
+        """Inicia el proceso para confirmar y realizar la compra."""
+        # 1. Validaciones Previas
+        if not self.funcion_seleccionada:
+            messagebox.showwarning("Acción Requerida", "Seleccione una función primero.")
+            return
+        if not self.asientos_seleccionados_para_compra:
+            messagebox.showwarning("Acción Requerida", "Seleccione al menos un asiento.")
+            return
+        if self.funcion_seleccionada.fechaLimite_pasada():
+             messagebox.showerror("Tiempo Excedido", "Ya no se pueden comprar entradas para esta función.")
+             return
+
+        # 2. Obtener Datos del Cliente
+        id_cliente = simpledialog.askstring("Identificación Cliente", "Ingrese el ID (cédula) del cliente:", parent=self.root)
+        if not id_cliente: # Si el usuario cancela
+            return
+
+        cliente = self.admin.get_cliente(id_cliente)
+        if not cliente:
+            nombre_cliente = simpledialog.askstring("Nombre Cliente Nuevo", f"Cliente con ID {id_cliente} no encontrado.\nIngrese el nombre:", parent=self.root)
+            if not nombre_cliente: # Si cancela de nuevo
+                return
+            cliente = Cliente(nombre_cliente, id_cliente)
+            self.admin.add_cliente(cliente) # Registrar nuevo cliente
+
+        # 3. Intentar Realizar la Compra a través del Admin
+        try:
+            ids_a_comprar = [a.id for a in self.asientos_seleccionados_para_compra]
+            tiquetes_comprados = self.admin.comprar_tiquetes(
+                self.funcion_seleccionada,
+                cliente,
+                ids_a_comprar,
+                PRECIO_TIQUETE
+            )
+
+            # 4. Éxito
+            messagebox.showinfo("Compra Exitosa",
+                                f"Se compraron {len(tiquetes_comprados)} tiquetes para {cliente.nombre} (ID: {cliente.id}).\n"
+                                f"Película: {self.funcion_seleccionada.pelicula.nombre}\n"
+                                f"Asientos: {', '.join(ids_a_comprar)}")
+
+            # Limpiar selección y refrescar vista
+            self.asientos_seleccionados_para_compra = []
+            self._update_purchase_info()
+            self._update_seat_display() # ¡Importante para ver asientos ocupados!
+
+        except (ValueError, TypeError) as e:
+            # 5. Error durante la compra
+            messagebox.showerror("Error en la Compra", f"No se pudo completar la compra:\n{e}")
+            # No limpiar selección, el usuario puede intentar corregir
+
+
+# Nota: Las clases Admin, Funcion, Asiento, etc., y la función main() deben estar
+# definidas en el mismo archivo o importadas correctamente para que esto funcione.
+# Asegúrate de haber aplicado la corrección de `copy.deepcopy` en `Funcion.__init__`.
 
 def main() -> None:
     """Función principal: Inicializa y ejecuta la aplicación Tkinter."""
     print("Iniciando aplicación Cine...")
+    admin = Admin("Cine Cultural Barranquilla")
+    admin.cargar_funciones_desde_archivo()
     root = tk.Tk()
-    app = TheaterGUI(root) # Crear la instancia de la GUI
+    app = TheaterGUI(root, admin) # Crear la instancia de la GUI
     root.mainloop() # Iniciar el bucle de eventos de Tkinter
     print("Aplicación Cine cerrada.")
 
