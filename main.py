@@ -623,6 +623,57 @@ class Admin:
             print(linea)
             asiento_idx += asientos_por_fila
         print("------------------------------")
+    
+    def reporte_por_sala(tiquetes_vendidos, nombre_sala):
+        total_personas = 0
+        total_dinero = 0.0
+
+        for t in tiquetes_vendidos:
+            if t.función.teatro.nombre == nombre_sala:
+                total_personas += 1
+                total_dinero += t.precio
+
+        print(f" Reporte para {nombre_sala}")
+        print(f" Personas ingresadas: {total_personas}")
+        print(f" Ganancias: ${total_dinero:.2f}")
+
+    def seleccionar_asiento_temporal(funcion, nombre_cliente, asiento_id, reservas_temporales):
+        asiento = next((a for a in funcion.teatro.asientos if a.id == asiento_id), None)
+        if asiento and asiento.está_disponible():
+            asiento.reservar()
+            reservas_temporales.append({
+                "cliente": nombre_cliente,
+                "asiento": asiento,
+                "funcion": funcion
+            })
+            print(f"Asiento {asiento.id} reservado temporalmente para {nombre_cliente}.")
+        else:
+            print("El asiento no está disponible o no existe.")
+
+    def anular_reserva(nombre_cliente, reservas_temporales):
+        for reserva in reservas_temporales:
+            if reserva["cliente"] == nombre_cliente:
+                reserva["asiento"].desreservar()
+                reservas_temporales.remove(reserva)
+                print(f"Reserva anulada para {nombre_cliente}.")
+                return
+        print("No se encontró ninguna reserva temporal para ese cliente.")
+
+    def confirmar_pago(nombre_cliente, reservas_temporales, tiquetes_vendidos, precio):
+        for reserva in reservas_temporales:
+            if reserva["cliente"] == nombre_cliente:
+                tiquete = Tiquete(
+                    precio,
+                    reserva["funcion"],
+                    nombre_cliente,
+                    reserva["asiento"]
+                )
+                tiquetes_vendidos.append(tiquete)
+                reservas_temporales.remove(reserva)
+                print("Compra confirmada:")
+                print(tiquete.obtener_información())
+                return
+        print(" No hay reserva temporal para confirmar.")
 
 
 class TheaterGUI:
