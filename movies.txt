@@ -1,9 +1,9 @@
-28/04/2025 - 14:30;Oppenheimer;Drama;Sala 1
-28/04/2025 - 18:00;Oppenheimer;Drama;Sala 2
-28/04/2025 - 14:30;Barbie;Comedy;Sala 2
-28/04/2025 - 18:00;Barbie;Comedy;Sala 3
-29/04/2025 - 14:30;The Matrix;Sci-Fi;Sala 3
-29/04/2025 - 18:00;The Matrix;Sci-Fi;Sala 1
-29/04/2025 - 14:30;Inception;Sci-Fi;Sala 1
-30/04/2025 - 18:00;The Godfather;Drama;Sala 2
-30/04/2025 - 14:30;Pulp Fiction;Crime;Sala 3
+2/05/2025 - 19:30;Oppenheimer;Drama;Sala 1
+2/05/2025 - 19:00;Oppenheimer;Drama;Sala 2
+2/05/2025 - 19:30;Barbie;Comedy;Sala 2
+2/05/2025 - 19:00;Barbie;Comedy;Sala 3
+2/05/2025 - 19:30;The Matrix;Sci-Fi;Sala 3
+2/05/2025 - 19:00;The Matrix;Sci-Fi;Sala 1
+2/05/2025 - 19:30;Inception;Sci-Fi;Sala 1
+2/05/2025 - 19:00;The Godfather;Drama;Sala 2
+2/05/2025 - 19:30;Pulp Fiction;Crime;Sala 3

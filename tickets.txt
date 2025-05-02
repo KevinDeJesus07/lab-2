@@ -1,3 +1,2 @@
-28/04/2025 - 14:30;Oppenheimer;Sala 1;B8
-28/04/2025 - 14:30;Oppenheimer;Sala 1;C1
-28/04/2025 - 14:30;Oppenheimer;Sala 1;D3
+02/05/2025 - 19:00;Sala 1;The Matrix;A1
+02/05/2025 - 19:00;Sala 1;The Matrix;A2
