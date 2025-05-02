@@ -1,4 +1,7 @@
-02/05/2025 - 19:00;Sala 1;The Matrix;A1
+02/05/2025 - 21:00;Sala 1;The Matrix;A1
 02/05/2025 - 19:00;Sala 1;The Matrix;A2
 02/05/2025 - 19:00;Sala 1;The Matrix;D2
 02/05/2025 - 19:00;Sala 1;The Matrix;E3
+02/05/2025 - 19:00;Sala 1;Barbie;E4
+02/05/2025 - 19:00;Sala 1;Barbie;E5
+02/05/2025 - 19:00;Sala 1;Barbie;E6
