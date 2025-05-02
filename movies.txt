@@ -1,30 +1,30 @@
-2/05/2025 - 19:00;Barbie;Comedy;Sala 1
-2/05/2025 - 21:00;The Matrix;Sci-Fi;Sala 1
-2/05/2025 - 19:30;Coco;Animation;Sala 2
-2/05/2025 - 21:30;Parasite;Thriller;Sala 2
-2/05/2025 - 19:00;Inception;Sci-Fi;Sala 3
-2/05/2025 - 21:00;The Godfather;Drama;Sala 3
-3/05/2025 - 19:30;Avengers: Endgame;Action;Sala 1
-3/05/2025 - 21:00;Coco;Animation;Sala 1
-3/05/2025 - 19:00;Pulp Fiction;Crime;Sala 2
-3/05/2025 - 21:30;Barbie;Comedy;Sala 2
-3/05/2025 - 19:00;Inception;Sci-Fi;Sala 3
-3/05/2025 - 21:00;The Matrix;Sci-Fi;Sala 3
-4/05/2025 - 19:30;The Godfather;Drama;Sala 1
-4/05/2025 - 21:00;La La Land;Musical;Sala 1
-4/05/2025 - 19:00;Oppenheimer;Drama;Sala 2
-4/05/2025 - 21:30;Parasite;Thriller;Sala 2
-4/05/2025 - 19:00;Coco;Animation;Sala 3
-4/05/2025 - 21:00;Pulp Fiction;Crime;Sala 3
-5/05/2025 - 19:30;Inception;Sci-Fi;Sala 1
-5/05/2025 - 21:00;Parasite;Thriller;Sala 1
-5/05/2025 - 19:00;La La Land;Musical;Sala 2
-5/05/2025 - 21:30;Oppenheimer;Drama;Sala 2
-5/05/2025 - 19:00;The Matrix;Sci-Fi;Sala 3
-5/05/2025 - 21:00;Avengers: Endgame;Action;Sala 3
-6/05/2025 - 19:00;Barbie;Comedy;Sala 1
-6/05/2025 - 21:00;La La Land;Musical;Sala 1
-6/05/2025 - 19:30;Coco;Animation;Sala 2
-6/05/2025 - 21:30;The Godfather;Drama;Sala 2
-6/05/2025 - 19:00;Oppenheimer;Drama;Sala 3
-6/05/2025 - 21:00;Pulp Fiction;Crime;Sala 3
+2/05/2025 - 12:00;Barbie;Comedy;Sala 1
+2/05/2025 - 16:30;The Matrix;Sci-Fi;Sala 1
+2/05/2025 - 12:30;Coco;Animation;Sala 2
+2/05/2025 - 17:00;Parasite;Thriller;Sala 2
+2/05/2025 - 13:00;Inception;Sci-Fi;Sala 3
+2/05/2025 - 17:30;The Godfather;Drama;Sala 3
+3/05/2025 - 12:00;Avengers: Endgame;Action;Sala 1
+3/05/2025 - 16:30;Coco;Animation;Sala 1
+3/05/2025 - 12:30;Pulp Fiction;Crime;Sala 2
+3/05/2025 - 17:00;Barbie;Comedy;Sala 2
+3/05/2025 - 13:00;Inception;Sci-Fi;Sala 3
+3/05/2025 - 17:30;The Matrix;Sci-Fi;Sala 3
+4/05/2025 - 12:00;The Godfather;Drama;Sala 1
+4/05/2025 - 16:30;La La Land;Musical;Sala 1
+4/05/2025 - 12:30;Oppenheimer;Drama;Sala 2
+4/05/2025 - 17:00;Parasite;Thriller;Sala 2
+4/05/2025 - 13:00;Coco;Animation;Sala 3
+4/05/2025 - 17:30;Pulp Fiction;Crime;Sala 3
+5/05/2025 - 12:00;Inception;Sci-Fi;Sala 1
+5/05/2025 - 16:30;Parasite;Thriller;Sala 1
+5/05/2025 - 12:30;La La Land;Musical;Sala 2
+5/05/2025 - 17:00;Oppenheimer;Drama;Sala 2
+5/05/2025 - 13:00;The Matrix;Sci-Fi;Sala 3
+5/05/2025 - 17:30;Avengers: Endgame;Action;Sala 3
+6/05/2025 - 12:00;Barbie;Comedy;Sala 1
+6/05/2025 - 16:30;La La Land;Musical;Sala 1
+6/05/2025 - 12:30;Coco;Animation;Sala 2
+6/05/2025 - 17:00;The Godfather;Drama;Sala 2
+6/05/2025 - 13:00;Oppenheimer;Drama;Sala 3
+6/05/2025 - 17:30;Pulp Fiction;Crime;Sala 3
