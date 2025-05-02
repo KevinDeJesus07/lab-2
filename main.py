@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-Cine Cultural Barranquilla - Sistema de Gestión y Reservas
+Cine Cultural Barranquilla - Sistema de Gestión y Reservas v1.0
 
 Descripción:
-Interfaz gráfica (GUI) para la gestión de un cine, usando ttkbootstrap.
-Permite visualizar funciones filtradas por fecha/película/sala, seleccionar
-asientos de forma interactiva y comprar tiquetes con validación de cliente.
-Las reservas se guardan en 'tickets.txt' para persistencia básica.
+Interfaz gráfica (GUI) construida con ttkbootstrap para la gestión de un cine.
+Permite visualizar funciones programadas filtradas por fecha, película y sala.
+Ofrece selección interactiva de asientos en un layout realista y simula la
+compra de tiquetes, validando datos del cliente. Las reservas de asientos
+se guardan en 'tickets.txt' para persistencia básica entre sesiones.
 
 Desarrollo:
 - Python 3.x
@@ -15,38 +16,37 @@ Desarrollo:
 - Archivos necesarios (mismo directorio):
   - movies.txt: Datos de funciones (Formato: DD/MM/YYYY - HH:MM;Película;Género;Sala)
   - tickets.txt: (Se crea automáticamente) Guarda las reservas.
-  - seat_available.png: Imagen asiento disponible (40x40, fondo opaco #FFFFFF RECOMENDADO)
-  - seat_occupied.png: Imagen asiento ocupado (40x40, fondo opaco #FFFFFF RECOMENDADO)
-  - seat_selected.png: Imagen asiento seleccionado (40x40, fondo opaco #FFFFFF RECOMENDADO)
+  - seat_available.png: Imagen asiento disponible (40x40, fondo opaco #FFFFFF RECOMENDADO).
+  - seat_occupied.png: Imagen asiento ocupado (40x40, fondo opaco #FFFFFF RECOMENDADO).
+  - seat_selected.png: Imagen asiento seleccionado (40x40, fondo opaco #FFFFFF RECOMENDADO).
 
 Autores:
     - Kevin De Jesús Romero Incer
     - Mateo
     - Alfredo
-    (Adaptado por Asistente AI)
+    (Adaptado y Refinado por Asistente AI)
 
-Fecha: 2025-05-01
+Fecha: 2025-05-02
 """
 
 import tkinter as tk
-import ttkbootstrap as ttk # Usar ttkbootstrap para tema y widgets mejorados
-from ttkbootstrap.constants import * # Importar constantes si se usan bootstyles específicos
+import ttkbootstrap as ttk
+from ttkbootstrap.constants import * # Constantes para bootstyles
 from tkinter import messagebox, simpledialog
 from datetime import datetime, timedelta, date
 from typing import List, Optional, Dict, Tuple
-from PIL import Image, ImageTk  # Necesita Pillow
-# Ya no se usa tkcalendar -> from tkcalendar import DateEntry
+from PIL import Image, ImageTk  # Necesita 'pip install Pillow'
 import copy
 import os
-import re # Importar re para validación de nombre
+import re # Para validación de nombre
 
-# --- Constantes ---
-APP_TITLE = "Cine Cultural Barranquilla - Taquilla"
+# --- Constantes Globales ---
+APP_TITLE = "Cine Cultural Barranquilla - Taquilla v1.0"
 WINDOW_GEOMETRY = "1280x768"
-# --- IMPORTANTE: Usar blanco opaco en imágenes y aquí ---
-COLOR_FONDO_ASIENTOS = '#FFFFFF' 
+# --- IMPORTANTE: Color de fondo para área de asientos y para fondo de imágenes ---
+COLOR_FONDO_ASIENTOS = '#FFFFFF' # Blanco (coincide con tema 'flatly')
 
-# Archivos de datos
+# Archivos
 MOVIE_DATA_FILE = 'movies.txt'
 TICKET_DATA_FILE = 'tickets.txt'
 
@@ -63,259 +63,187 @@ SEAT_IMG_HEIGHT = 40
 
 # Otros
 PRECIO_TIQUETE = 15000 # Precio base por tiquete (COP)
-# Formato consistente para leer/escribir fechas en archivos
-DATE_FORMAT_FILE = '%d/%m/%Y - %H:%M' 
-# Formato Python strftime para mostrar fechas en GUI (si es diferente)
-DATE_FORMAT_DISPLAY_FULL = '%d/%m/%Y %H:%M' 
-DATE_FORMAT_DISPLAY_DATE = '%d/%m/%Y' 
-DATE_FORMAT_DISPLAY_TIME = '%H:%M' 
-# Formato que entiende ttk.DateEntry (usando códigos Python strftime ahora)
-DATE_FORMAT_DATEENTRY = DATE_FORMAT_DISPLAY_DATE # Ej: '%d/%m/%Y'
+# Formatos de Fecha/Hora
+DATE_FORMAT_FILE = '%d/%m/%Y - %H:%M'     # Formato en archivos movies.txt/tickets.txt
+DATE_FORMAT_DISPLAY_FULL = '%d/%m/%Y %H:%M' # Para mostrar fecha y hora completa
+DATE_FORMAT_DISPLAY_DATE = '%d/%m/%Y'     # Para mostrar/parsear solo fecha
+DATE_FORMAT_DISPLAY_TIME = '%H:%M'     # Para mostrar solo hora
+DATE_FORMAT_DATEENTRY = DATE_FORMAT_DISPLAY_DATE # Formato que usa ttk.DateEntry
+
 
 # --- Función Auxiliar para Centrar Ventanas ---
-def center_window(window, width, height):
-    """Calcula y aplica la geometría para centrar una ventana en la pantalla."""
+def center_window(window: tk.Misc, width: int, height: int) -> None:
+    """Calcula y aplica geometría para centrar una ventana Tk o Toplevel."""
     try:
-        # Obtener dimensiones de la pantalla desde la ventana dada
+        window.update_idletasks() # Asegurar que winfo esté actualizado
         screen_width = window.winfo_screenwidth()
         screen_height = window.winfo_screenheight()
-
-        # Calcular coordenadas X, Y para la esquina superior izquierda
         x = (screen_width / 2) - (width / 2)
         y = (screen_height / 2) - (height / 2)
-
-        # Aplicar la geometría (convertir coords a entero)
         window.geometry(f'{width}x{height}+{int(x)}+{int(y)}')
-        print(f"Ventana centrada: {width}x{height} en ({int(x)}, {int(y)})")
+        # print(f"Ventana centrada: {width}x{height} en ({int(x)},{int(y)})") # Log opcional
     except Exception as e:
-        print(f"Advertencia: No se pudo centrar la ventana ({e}). Usando tamaño por defecto.")
-        # Aplicar solo tamaño si falla el centrado
+        print(f"Advertencia: No se pudo centrar ventana ({e}). Usando tamaño {width}x{height}.")
         window.geometry(f'{width}x{height}')
+
 
 # --- Clases de Modelo de Datos ---
 
 class Asiento:
-    """Representa un único asiento en una sala de cine."""
+    """Representa un único asiento con ID y estado de disponibilidad."""
     def __init__(self, id_asiento: str):
-        """Inicializa un asiento con ID y estado disponible."""
         self.id = id_asiento
         self.disponible = True
 
-    def está_disponible(self) -> bool:
-        """Verifica si el asiento está disponible."""
-        return self.disponible
-
-    def reservar(self) -> None:
-        """Marca el asiento como ocupado (no disponible)."""
-        if not self.disponible:
-            print(f"Advertencia: Intento de reservar asiento {self.id} ya ocupado.")
-        self.disponible = False
-
-    def desreservar(self) -> None:
-        """Marca el asiento como disponible."""
-        self.disponible = True # No necesita verificar estado previo
-
-    def __str__(self) -> str:
-        """Representación corta del asiento."""
-        return f"Asiento({self.id}, {'Disp' if self.disponible else 'Ocup'})"
-
-    def __repr__(self) -> str:
-        """Representación oficial para depuración."""
-        return f"Asiento(id='{self.id}')"
+    def está_disponible(self) -> bool: return self.disponible
+    def reservar(self) -> None: self.disponible = False
+    def desreservar(self) -> None: self.disponible = True
+    def __str__(self) -> str: return f"Asiento({self.id}, {'Disp' if self.disponible else 'Ocup'})"
+    def __repr__(self) -> str: return f"Asiento(id='{self.id}')"
 
 class Teatro:
-    """Representa una plantilla de sala de cine con una lista de asientos."""
+    """Representa una plantilla de sala con una lista de asientos base."""
     def __init__(self, nombre: str, cantidad_asientos: int = DEFAULT_SEATS_PER_THEATER):
-        """Inicializa una sala con nombre y asientos generados."""
         self.nombre = nombre
         self.asientos: List[Asiento] = self._generar_asientos(cantidad_asientos)
 
     def _generar_asientos(self, cantidad: int) -> List[Asiento]:
-        """Genera la lista inicial de objetos Asiento (método privado)."""
-        # Nota: IDs generados (A1..J8) son básicos. El layout visual es independiente.
+        """Genera IDs básicos A1..J8 (privado)."""
         asientos_generados = []
         filas = "ABCDEFGHIJ"
-        if cantidad <= 0: return []
-        
-        # Cálculo simple, puede no llenar exactamente si no es divisible o hay < 10 asientos
-        asientos_por_fila = max(1, cantidad // len(filas)) 
-
+        if cantidad <= 0 or not filas: return []
+        asientos_por_fila = max(1, cantidad // len(filas))
         count = 0
         for fila in filas:
             for num in range(1, asientos_por_fila + 1):
                 if count < cantidad:
-                    asientos_generados.append(Asiento(f"{fila}{num}"))
-                    count += 1
+                    asientos_generados.append(Asiento(f"{fila}{num}")); count += 1
                 else: break
             if count >= cantidad: break
-        
-        # Relleno de seguridad si el cálculo falló
         while len(asientos_generados) < cantidad:
-             asientos_generados.append(Asiento(f"Extra{len(asientos_generados) + 1}"))
+             asientos_generados.append(Asiento(f"Extra{len(asientos_generados)+1}"))
         return asientos_generados
 
     def obtener_asiento_por_id(self, id_asiento: str) -> Optional[Asiento]:
-        """Busca un asiento por su ID en esta plantilla."""
         for asiento in self.asientos:
             if asiento.id == id_asiento: return asiento
         return None
 
-    def reiniciar(self) -> None:
-        """Marca todos los asientos de esta plantilla como disponibles."""
-        for asiento in self.asientos: asiento.desreservar()
-
-    def __str__(self) -> str:
-        """Representación textual del teatro."""
-        return f"Teatro({self.nombre}, Asientos: {len(self.asientos)})"
+    def __str__(self) -> str: return f"Teatro({self.nombre})"
 
 class Pelicula:
-    """Representa una película con su nombre y género."""
+    """Representa una película."""
     def __init__(self, nombre: str, genero: str):
-        """Inicializa la película."""
-        self.nombre = nombre
-        self.genero = genero
-
-    def obtener_informacion(self) -> str:
-        """Devuelve nombre y género."""
-        return f"{self.nombre} ({self.genero})"
-
-    def __str__(self) -> str:
-        """Representación textual."""
-        return self.obtener_informacion()
+        self.nombre = nombre; self.genero = genero
+    def __str__(self) -> str: return f"{self.nombre} ({self.genero})"
 
 class Funcion:
-    """Representa una proyección específica con estado de asientos independiente."""
+    """Representa una proyección con estado de asientos independiente."""
     def __init__(self, fecha: datetime, pelicula: Pelicula, teatro_plantilla: Teatro):
-        """Inicializa la función, creando copia profunda del teatro."""
         self.pelicula = pelicula
         self.teatro_funcion = copy.deepcopy(teatro_plantilla) # Copia independiente
         self.fecha = fecha
-        self.fechaLimite = fecha + timedelta(minutes=30) # Límite para comprar
+        self.fechaLimite = fecha + timedelta(minutes=30)
 
     def obtener_informacion(self) -> str:
-        """Devuelve detalles de la función (película, sala, hora)."""
+        """Devuelve nombre, sala y hora."""
         return f"{self.pelicula.nombre} en {self.teatro_funcion.nombre} - {self.fecha.strftime(DATE_FORMAT_DISPLAY_TIME)}"
 
     def fechaLimite_pasada(self) -> bool:
-        """Verifica si ya es tarde para comprar (30 min post-inicio)."""
         return datetime.now() > self.fechaLimite
 
     def obtener_asientos_disponibles(self) -> List[Asiento]:
-         """Obtiene asientos disponibles para ESTA función."""
          return [a for a in self.teatro_funcion.asientos if a.está_disponible()]
 
     def obtener_asiento_por_id(self, id_asiento: str) -> Optional[Asiento]:
-         """Busca un asiento por ID DENTRO del estado de esta función."""
          for asiento in self.teatro_funcion.asientos:
               if asiento.id == id_asiento: return asiento
          return None
 
     def esta_disponible_en_fecha(self, tiempoDeReferencia: datetime) -> bool:
-        """Verifica si la función no ha comenzado respecto a un tiempo."""
         return self.fecha >= tiempoDeReferencia
 
-    def __str__(self) -> str:
-        """Representación textual corta."""
-        return self.obtener_informacion()
+    def __str__(self) -> str: return self.obtener_informacion()
 
 class Cliente:
-    """Representa a un cliente del cine."""
+    """Representa a un cliente."""
     def __init__(self, nombre: str, id_cliente: str):
-        """Inicializa con nombre e ID."""
-        self.nombre = nombre
-        self.id = id_cliente
+        self.nombre = nombre; self.id = id_cliente
+    def __str__(self) -> str: return f"Cliente({self.nombre}, ID: {self.id})"
 
-    def __str__(self) -> str:
-        """Representación textual."""
-        return f"Cliente({self.nombre}, ID: {self.id})"
-
+# --- CORREGIDO: Tiquete guarda objeto Cliente ---
 class Tiquete:
     """Representa un tiquete comprado."""
-    # --- CORREGIDO: Acepta objeto Cliente ---
     def __init__(self, precio: float, funcion: Funcion, cliente: Cliente, asiento: Asiento):
-        """Inicializa tiquete, guardando referencia al cliente."""
-        self.precio = precio
-        self.funcion = funcion
-        self.cliente = cliente 
-        self.asiento = asiento
+        self.precio = precio; self.funcion = funcion
+        self.cliente = cliente; self.asiento = asiento
 
     def obtener_informacion(self) -> str:
-        """Devuelve detalles completos del tiquete."""
-        return (
-            f"Tiquete para {self.funcion.obtener_informacion()}\n"
-            f"Cliente: {self.cliente.nombre} (ID: {self.cliente.id})\n"
-            f"Asiento: {self.asiento.id}\n"
-            f"Precio: ${self.precio:,.2f} COP"
-        )
+        return (f"Tiquete para {self.funcion.obtener_informacion()}\n"
+                f"Cliente: {self.cliente.nombre} (ID: {self.cliente.id})\n"
+                f"Asiento: {self.asiento.id}\n"
+                f"Precio: ${self.precio:,.2f} COP")
 
     def __str__(self) -> str:
-        """Representación textual corta."""
         return f"Tiquete({self.funcion.pelicula.nombre}, Asiento: {self.asiento.id}, Cliente: {self.cliente.nombre})"
 
 # --- Clases de Lógica y Control ---
 
 class ControladorDeArchivos:
-    """Gestiona lectura/escritura simple en archivos delimitados por ';'."""
+    """Gestiona lectura/escritura en archivos delimitados por ';'."""
     def __init__(self, ruta: str):
-        """Inicializa y crea el archivo si no existe."""
         self.ruta = ruta
         if not os.path.exists(self.ruta):
-            try:
+            try: # Crear archivo si no existe
                 with open(self.ruta, "w", encoding='utf-8') as f: f.write("")
                 print(f"Archivo '{self.ruta}' creado.")
             except Exception as e: print(f"Error creando archivo '{self.ruta}': {e}")
 
     def leer(self) -> List[List[str]]:
-        """Lee y parsea líneas del archivo."""
         try:
-            with open(self.ruta, "r", encoding='utf-8') as archivo:
-                return [linea.strip().split(";") for linea in archivo if linea.strip()]
-        except FileNotFoundError: return []
+            with open(self.ruta, "r", encoding='utf-8') as f:
+                return [line.strip().split(";") for line in f if line.strip()]
         except Exception as e: print(f"Error leyendo '{self.ruta}': {e}"); return []
 
     def escribir(self, datos: List[str]) -> None:
-        """Añade una línea (campos unidos por ';') al archivo."""
         try:
             datos_str = [str(d) for d in datos] # Asegurar strings
-            with open(self.ruta, "a", encoding='utf-8') as archivo:
-                archivo.write(';'.join(datos_str) + '\n')
+            with open(self.ruta, "a", encoding='utf-8') as f:
+                f.write(';'.join(datos_str) + '\n')
         except Exception as e: print(f"Error escribiendo en '{self.ruta}': {e}")
 
 class Admin:
     """Clase principal para lógica de negocio y gestión de datos."""
     def __init__(self, nombre_cine: str):
-        """Inicializa el Admin, teatros y controladores."""
         self.nombre = nombre_cine
         self.clientes: List[Cliente] = []
         self.teatros: Dict[str, Teatro] = {n: Teatro(n) for n in DEFAULT_THEATER_NAMES}
         self.funciones_diarias: Dict[str, List[Funcion]] = {n: [] for n in DEFAULT_THEATER_NAMES}
-        self.tiquetes: Dict[str, List[Tiquete]] = {} # id_cliente -> Lista Tiquetes (en memoria)
+        self.tiquetes: Dict[str, List[Tiquete]] = {}
 
         self.controlador_funciones = ControladorDeArchivos(MOVIE_DATA_FILE)
         self.controlador_tiquetes = ControladorDeArchivos(TICKET_DATA_FILE)
 
     def add_cliente(self, cliente: Cliente) -> bool:
-        """Añade un cliente si no existe. Devuelve True si fue añadido."""
+        """Añade cliente si ID no existe. Inicializa lista de tiquetes."""
         if not isinstance(cliente, Cliente) or self.get_cliente(cliente.id): return False
         self.clientes.append(cliente)
-        if cliente.id not in self.tiquetes: self.tiquetes[cliente.id] = []
+        self.tiquetes[cliente.id] = [] # Asegurar entrada en dict de tiquetes
         print(f"Cliente '{cliente.nombre}' (ID: {cliente.id}) añadido.")
         return True
 
     def get_cliente(self, id_cliente: str) -> Optional[Cliente]:
-        """Busca cliente por ID."""
-        for cliente in self.clientes:
-            if cliente.id == id_cliente: return cliente
+        for c in self.clientes:
+            if c.id == id_cliente: return c
         return None
 
     def cargar_funciones_desde_archivo(self) -> int:
-        """Carga funciones desde movies.txt, aplicando límite por sala."""
+        """Carga funciones desde movies.txt, aplicando límite de 2 por sala."""
         count = 0
         print(f"Cargando funciones desde '{self.controlador_funciones.ruta}'...")
         registros = self.controlador_funciones.leer()
         if not registros: print("Archivo de funciones vacío."); return 0
 
-        # Limpiar y preparar contadores
         for sala in self.funciones_diarias: self.funciones_diarias[sala] = []
         contador_sala = {sala: 0 for sala in DEFAULT_THEATER_NAMES}
 
@@ -327,6 +255,10 @@ class Admin:
                     teatro_p = self.teatros.get(s_nom)
                     if not teatro_p: raise ValueError(f"Teatro '{s_nom}' inválido")
                     
+                    if s_nom not in contador_sala: # Seguridad por si acaso
+                         print(f"Error L.{i+1}: Sala '{s_nom}' no está inicializada.")
+                         continue
+
                     if contador_sala[s_nom] >= 2:
                         print(f"Adv L.{i+1}: Límite 2 func. para {s_nom}. Ignorando '{p_nom}'.")
                         continue
@@ -345,7 +277,7 @@ class Admin:
 
     # --- CORREGIDO: Acepta y pasa objeto Cliente ---
     def comprar_tiquetes(self, funcion: Funcion, cliente: Cliente, ids_asientos: List[str], precio_unitario: float) -> List[Tiquete]:
-        """Procesa compra, reserva asientos en la copia de la función y guarda tiquete simple."""
+        """Procesa compra, reserva asientos y guarda registro simple del tiquete."""
         if not isinstance(funcion, Funcion) or not isinstance(cliente, Cliente):
             raise TypeError("Args 'funcion'/'cliente' inválidos.")
         if not ids_asientos: raise ValueError("Seleccione al menos un asiento.")
@@ -358,7 +290,7 @@ class Admin:
             if not asiento.está_disponible(): raise ValueError(f"Asiento {id_a} no disponible.")
             asientos_a_reservar.append(asiento)
         
-        try: # Reservar y crear/guardar después de validar todos
+        try: # Reservar y crear/guardar después
             for asiento in asientos_a_reservar:
                 asiento.reservar() # Modifica la copia en 'funcion'
                 # --- CORREGIDO: Pasar objeto cliente ---
@@ -375,56 +307,30 @@ class Admin:
                  if not asiento.está_disponible(): asiento.desreservar()
             raise ValueError(f"Error procesando compra: {e}")
 
-    def get_funciones_disponibles_por_fecha(self, fecha: datetime, incluir_ya_empezadas: bool = True) -> List[Funcion]:
-        """
-        Obtiene funciones para una fecha específica. Si incluir_ya_empezadas es False,
-        filtra las funciones cuya hora de inicio sea anterior a la hora ACTUAL.
-
-        Args:
-            fecha (datetime): La fecha para la cual buscar funciones.
-            incluir_ya_empezadas (bool): Si es False, se excluyen las funciones
-                                         que ya comenzaron según la hora actual.
-                                         Si es True (default), se incluyen todas las del día.
-
-        Returns:
-            List[Funcion]: Lista ordenada por hora de las funciones encontradas.
-        """
-        tiempo_referencia: datetime
-
-        # --- LÓGICA DE TIEMPO DE REFERENCIA MODIFICADA ---
-        if not incluir_ya_empezadas:
-            # Si NO queremos incluir las empezadas, comparamos contra AHORA MISMO
-            tiempo_referencia = datetime.now()
-        else:
-            # Si SÍ queremos incluir empezadas (o es para una fecha diferente),
-            # comparamos contra el inicio del día seleccionado para obtener todas.
-            tiempo_referencia = fecha.replace(hour=0, minute=0, second=0, microsecond=0)
-        # --- Fin lógica modificada ---
-
-        # (Opcional) Prints de depuración si sigues necesitándolos
-        # print("-" * 20)
-        # print(f"DEBUG (Nueva Lógica): Buscando para fecha: {fecha.date()}")
-        # print(f"DEBUG (Nueva Lógica): incluir_ya_empezadas: {incluir_ya_empezadas}")
-        # print(f"DEBUG (Nueva Lógica): tiempo_referencia usado: {tiempo_referencia.strftime('%Y-%m-%d %H:%M:%S')}")
-        # print("-" * 20)
+    # --- CORREGIDO: Nombre del argumento y lógica simplificada ---
+    def get_funciones_disponibles_por_fecha(self, fecha_consulta: datetime, incluir_ya_empezadas: bool = True) -> List[Funcion]:
+        """Obtiene funciones para una fecha, filtrando opcionalmente las ya empezadas."""
+        tiempo_referencia = datetime.now() if not incluir_ya_empezadas else fecha_consulta.replace(hour=0, minute=0, second=0, microsecond=0)
+        
+        # (Opcional) Prints de depuración
+        # print(f"DEBUG: get_funciones_... FechaConsulta: {fecha_consulta.date()}, IncluirEmpezadas: {incluir_ya_empezadas}, Ref: {tiempo_referencia}")
 
         funciones_del_dia: List[Funcion] = []
         for lista_funciones in self.funciones_diarias.values():
             for funcion in lista_funciones:
-                # Filtrar primero por fecha
-                if funcion.fecha.date() == fecha.date():
-                    # Luego filtrar por hora usando el tiempo_referencia determinado
-                    if funcion.esta_disponible_en_fecha(tiempo_referencia): # func.fecha >= tiempo_referencia
+                if funcion.fecha.date() == fecha_consulta.date():
+                    # Comparar hora de inicio de la función con el tiempo de referencia
+                    if funcion.fecha >= tiempo_referencia:
                         funciones_del_dia.append(funcion)
-
+                        
         return sorted(funciones_del_dia, key=lambda f: f.fecha)
-    
-    # --- CORREGIDO: Versión simple para guardar estado de reserva ---
+
+    # --- CORREGIDO: Versión simple correcta para guardar estado ---
     def guardar_tiquete_en_archivo(self, tiquete: Tiquete) -> None:
         """Guarda info ESENCIAL (Fecha;Sala;Peli;AsientoID) en tickets.txt."""
         try:
             tiquete_data_simple = [
-                tiquete.funcion.fecha.strftime(DATE_FORMAT_FILE),
+                tiquete.funcion.fecha.strftime(DATE_FORMAT_FILE), # Fecha y hora completas
                 tiquete.funcion.teatro_funcion.nombre,
                 tiquete.funcion.pelicula.nombre,
                 tiquete.asiento.id,
@@ -433,7 +339,7 @@ class Admin:
         except Exception as e:
             print(f"Error guardando tiquete simple en '{TICKET_DATA_FILE}': {e}")
 
-    # --- CORREGIDO: Nombre y lógica para cargar/aplicar reservas ---
+    # --- CORREGIDO: Nombre y lógica para cargar/aplicar ---
     def _cargar_y_aplicar_reservas(self) -> None:
         """Lee tickets.txt y marca asientos como ocupados en funciones en memoria."""
         print(f"Cargando y aplicando reservas desde '{TICKET_DATA_FILE}'...")
@@ -450,10 +356,10 @@ class Admin:
         if not reservas_guardadas: print("No hay reservas guardadas."); return
 
         for i, record in enumerate(reservas_guardadas):
-            if len(record) >= 4: # Necesita 4 campos guardados por guardar_tiquete...
+            if len(record) >= 4:
                 fecha_str, nombre_sala, nombre_peli, asiento_id = [r.strip() for r in record[:4]]
                 try:
-                    fecha_dt = datetime.strptime(fecha_str, DATE_FORMAT_FILE)
+                    fecha_dt = datetime.strptime(fecha_str, DATE_FORMAT_FILE) # Usar formato completo
                     key_busqueda = (fecha_dt, nombre_sala, nombre_peli)
                     funcion_encontrada = funciones_map.get(key_busqueda)
 
@@ -462,8 +368,6 @@ class Admin:
                         if asiento and asiento.está_disponible():
                             asiento.reservar()
                             reservas_aplicadas += 1
-                        # else: Asiento no existe o ya ocupado, ignorar
-                    # else: Función no encontrada, ignorar
                 except ValueError as e: print(f"Error parse Tkt L.{i+1}: {record} -> {e}")
                 except Exception as e: print(f"Error inesperado Tkt L.{i+1}: {record} -> {e}")
             else: print(f"Adv Tkt L.{i+1}: Formato incorrecto: {record}")
@@ -475,41 +379,25 @@ class Admin:
         lista_completa = [func for lista in self.funciones_diarias.values() for func in lista]
         lista_completa.sort(key=lambda f: (f.fecha, f.teatro_funcion.nombre))
         return lista_completa
-    
+        
     def generar_reporte_completo(self) -> List[Dict]:
-        """
-        Genera datos de ventas y ganancias para TODAS las funciones cargadas,
-        basándose en los asientos marcados como ocupados en cada función.
-        """
+        """Genera datos de ventas/ganancias para TODAS las funciones, contando asientos ocupados."""
         reporte_final = []
-        print("Generando reporte contando asientos ocupados...") # Log para confirmar
+        print("Generando reporte contando asientos ocupados...")
 
-        # Iterar sobre todas las funciones cargadas en memoria
         for lista_funciones_sala in self.funciones_diarias.values():
             for funcion in lista_funciones_sala:
-                
-                # Contar asientos ocupados para ESTA función específica
-                asientos_ocupados = 0
-                for asiento in funcion.teatro_funcion.asientos:
-                    if not asiento.está_disponible():
-                        asientos_ocupados += 1
-                        
-                # Calcular ganancias basadas en asientos ocupados y precio fijo
+                # Contar asientos ocupados para ESTA función
+                asientos_ocupados = sum(1 for a in funcion.teatro_funcion.asientos if not a.está_disponible())
                 ganancias_totales = asientos_ocupados * PRECIO_TIQUETE
                             
-                # Añadir datos al reporte final
                 reporte_final.append({
-                    # 'funcion_info': str(funcion), # Podemos quitar esto si no se usa en la tabla
-                    'fecha': funcion.fecha,
-                    'sala': funcion.teatro_funcion.nombre,
+                    'fecha': funcion.fecha, 'sala': funcion.teatro_funcion.nombre,
                     'pelicula': funcion.pelicula.nombre,
-                    'tiquetes_vendidos': asientos_ocupados, # <- Basado en conteo
-                    'ganancias_totales': ganancias_totales # <- Basado en conteo * precio
+                    'tiquetes_vendidos': asientos_ocupados,
+                    'ganancias_totales': ganancias_totales
                 })
-                
-        # Ordenar el reporte por fecha y luego sala
         reporte_final.sort(key=lambda item: (item['fecha'], item['sala']))
-        
         print(f"Reporte generado para {len(reporte_final)} funciones.")
         return reporte_final
 
@@ -517,35 +405,32 @@ class Admin:
 
 class TheaterGUI:
     """Interfaz gráfica principal usando ttkbootstrap."""
-    def __init__(self, root: ttk.Window, admin_instance: Admin): # Acepta ttk.Window
-        """Inicializa la GUI con ttkbootstrap."""
+    def __init__(self, root: ttk.Window, admin_instance: Admin):
+        """Inicializa la GUI, variables, carga imágenes y configura layout."""
         self.root = root
         self.admin = admin_instance
         self.funcion_seleccionada: Optional[Funcion] = None
         self.asientos_seleccionados_para_compra: List[Asiento] = []
-        self.mapa_widgets_asientos: Dict[str, tk.Button] = {} # Usaremos tk.Button para asientos
+        self.mapa_widgets_asientos: Dict[str, tk.Button] = {} # Usar tk.Button
 
         self.root.title(APP_TITLE)
-        self.root.geometry(WINDOW_GEOMETRY)
+        # No llamar a geometry aquí, se hace en main después de centrar
 
         # Variables para filtros
         self.movie_filter_var = tk.StringVar(value="Todas")
         self.sala_filter_var = tk.StringVar(value="Todas")
-        self.include_started_var = tk.BooleanVar(value=False) # True = Incluir empezadas (Default)
+        # --- CORREGIDO: Checkbox inicia desmarcado ---
+        self.include_started_var = tk.BooleanVar(value=False) 
         self.show_all_functions_var = tk.BooleanVar(value=False)
 
-        # Carga de imágenes (RECOMENDADO: fondo opaco COLOR_FONDO_ASIENTOS)
         self._cargar_imagenes_asientos()
-
-        # Configuración de layout y widgets
         self._setup_gui_layout()
-
-        # Carga inicial de funciones para hoy
-        self._on_filter_apply()
+        self._on_filter_apply() # Carga inicial
 
     def _cargar_imagenes_asientos(self) -> None:
         """Carga y prepara las imágenes de los asientos."""
-        # (Asumiendo que las imágenes ya tienen fondo opaco blanco #FFFFFF)
+        print("Cargando imágenes de asientos...")
+        # --- RECOMENDACIÓN FUERTE: Usar imágenes con fondo opaco COLOR_FONDO_ASIENTOS ---
         try:
             pil_avail = Image.open(SEAT_IMG_AVAILABLE).resize((SEAT_IMG_WIDTH, SEAT_IMG_HEIGHT), Image.Resampling.LANCZOS)
             pil_occup = Image.open(SEAT_IMG_OCCUPIED).resize((SEAT_IMG_WIDTH, SEAT_IMG_HEIGHT), Image.Resampling.LANCZOS)
@@ -553,22 +438,22 @@ class TheaterGUI:
             self.img_available = ImageTk.PhotoImage(pil_avail)
             self.img_occupied = ImageTk.PhotoImage(pil_occup)
             self.img_selected = ImageTk.PhotoImage(pil_select)
-            print("Imágenes de asientos cargadas.")
+            print("Imágenes de asientos OK.")
         except FileNotFoundError as e:
-            msg = f"ERROR CRÍTICO: Falta archivo de imagen '{e.filename}'.\nLa aplicación podría no funcionar correctamente."
+            msg = f"ERROR CRÍTICO: Falta archivo '{e.filename}'. Se usará fallback de texto/color."
             print(msg)
-            messagebox.showerror("Error de Imagen", msg)
+            messagebox.showerror("Error Imagen", msg)
             self.img_available = self.img_occupied = self.img_selected = None
         except Exception as e:
             msg = f"Error inesperado cargando imágenes: {e}"
             print(msg)
-            messagebox.showerror("Error de Imagen", msg)
+            messagebox.showerror("Error Imagen", msg)
             self.img_available = self.img_occupied = self.img_selected = None
 
     # --- Métodos de Configuración de GUI ---
 
     def _setup_gui_layout(self) -> None:
-        """Configura la estructura principal de widgets de la GUI, incluyendo filtros y bindings."""
+        """Configura la estructura principal de widgets y bindings."""
         self.root.rowconfigure(1, weight=1)
         self.root.columnconfigure(0, weight=1)
 
@@ -576,89 +461,68 @@ class TheaterGUI:
         filter_frame = ttk.Frame(self.root, padding="10")
         filter_frame.grid(row=0, column=0, sticky='ew')
 
-        # Filtro de Fecha
+        # Filtro Fecha
         ttk.Label(filter_frame, text="Fecha:").pack(side='left', padx=(0, 5))
-        date_format_python = DATE_FORMAT_DISPLAY_DATE # Usar formato de display '%d/%m/%Y'
-        self.date_entry_widget = ttk.DateEntry(
-            filter_frame,
-            firstweekday=0,
-            dateformat=date_format_python, # Pasar formato Python
-            width=12
-        )
+        self.date_entry_widget = ttk.DateEntry(filter_frame, firstweekday=0, 
+                                               dateformat=DATE_FORMAT_DATEENTRY, width=12)
         self.date_entry_widget.pack(side='left', padx=5)
-        
-        # --- CORRECCIÓN: Bindings para actualizar al cambiar fecha ---
-        # 1. Al seleccionar del calendario popup
-        self.date_entry_widget.bind("<<DateEntrySelected>>", lambda event: self._on_filter_apply())
-        # 2. Al presionar Enter en la caja de texto
-        self.date_entry_widget.entry.bind("<Return>", lambda event: self._on_filter_apply())
-        # 3. Al perder el foco la caja de texto (hacer clic fuera)
-        self.date_entry_widget.entry.bind("<FocusOut>", lambda event: self._on_filter_apply())
+        self.date_entry_widget.bind("<<DateEntrySelected>>", self._on_filter_apply)
+        self.date_entry_widget.entry.bind("<Return>", self._on_filter_apply)
+        self.date_entry_widget.entry.bind("<FocusOut>", self._on_filter_apply)
 
-
-        # Filtro de Película
+        # Filtro Película
         ttk.Label(filter_frame, text="Película:").pack(side='left', padx=(15, 5))
-        self.movie_combobox = ttk.Combobox(filter_frame, textvariable=self.movie_filter_var,
+        self.movie_combobox = ttk.Combobox(filter_frame, textvariable=self.movie_filter_var, 
                                            state='disabled', width=30)
-        self.movie_combobox['values'] = ["Todas"]
-        self.movie_combobox.current(0)
+        self.movie_combobox['values'] = ["Todas"]; self.movie_combobox.current(0)
         self.movie_combobox.pack(side='left', padx=5)
-        self.movie_combobox.bind("<<ComboboxSelected>>", lambda event: self._on_filter_apply())
+        self.movie_combobox.bind("<<ComboboxSelected>>", self._on_filter_apply)
 
-        # Filtro de Sala
+        # Filtro Sala
         ttk.Label(filter_frame, text="Sala:").pack(side='left', padx=(15, 5))
-        self.sala_combobox = ttk.Combobox(filter_frame, textvariable=self.sala_filter_var,
+        self.sala_combobox = ttk.Combobox(filter_frame, textvariable=self.sala_filter_var, 
                                           state='readonly', width=15)
-        self.sala_combobox['values'] = ["Todas"] + DEFAULT_THEATER_NAMES
-        self.sala_combobox.current(0)
+        self.sala_combobox['values'] = ["Todas"] + DEFAULT_THEATER_NAMES; self.sala_combobox.current(0)
         self.sala_combobox.pack(side='left', padx=5)
-        self.sala_combobox.bind("<<ComboboxSelected>>", lambda event: self._on_filter_apply())
+        self.sala_combobox.bind("<<ComboboxSelected>>", self._on_filter_apply)
 
         # Checkbox "Mostrar Todas"
-        show_all_check = ttk.Checkbutton(
-            filter_frame, text="Mostrar Todas", variable=self.show_all_functions_var,
-            command=self._on_toggle_show_all, bootstyle="round-toggle")
+        show_all_check = ttk.Checkbutton(filter_frame, text="Mostrar Todas", 
+                                         variable=self.show_all_functions_var,
+                                         command=self._on_toggle_show_all, bootstyle="round-toggle")
         show_all_check.pack(side='right', padx=15)
 
         # Checkbox "Incluir Empezadas"
+        # --- CORREGIDO: Guardar referencia en self. ---
         self.include_started_check = ttk.Checkbutton(
             filter_frame, text="Incluir ya empezadas", variable=self.include_started_var,
             command=self._on_filter_apply, bootstyle="round-toggle")
         self.include_started_check.pack(side='right', padx=5)
 
-        # --- Botón para abrir ventana de reportes ---
-        report_button = ttk.Button(
-            filter_frame, 
-            text="Ver Reporte", 
-            command=self._mostrar_ventana_reportes, # Llama a un nuevo método
-            bootstyle=SUCCESS # Un estilo diferente (ej. gris)
-        )
-        # Empaquetarlo, quizás a la izquierda o al final
-        report_button.pack(side='left', padx=20) 
+        # Botón Reporte
+        report_button = ttk.Button(filter_frame, text="Ver Reporte", 
+                                   command=self._mostrar_ventana_reportes, bootstyle=SUCCESS)
+        report_button.pack(side='left', padx=20)
 
         # --- Frame Principal (PanedWindow) ---
         main_pane = ttk.PanedWindow(self.root, orient='horizontal')
         main_pane.grid(row=1, column=0, sticky='nsew', padx=10, pady=5)
 
-        # --- Frame Izquierdo (Funciones) ---
+        # Frame Izquierdo (Funciones)
         functions_frame = ttk.Frame(main_pane, padding="5")
         main_pane.add(functions_frame, weight=1)
         ttk.Label(functions_frame, text="Funciones Disponibles", font="-weight bold").pack(pady=5)
         cols = ('pelicula', 'hora', 'sala')
         self.functions_treeview = ttk.Treeview(functions_frame, columns=cols, show='headings', height=15, bootstyle=INFO)
-        self.functions_treeview.heading('pelicula', text='Película')
-        self.functions_treeview.heading('hora', text='Hora')
-        self.functions_treeview.heading('sala', text='Sala')
-        self.functions_treeview.column('pelicula', width=200, anchor='w')
-        self.functions_treeview.column('hora', width=100, anchor='center')
-        self.functions_treeview.column('sala', width=100, anchor='center')
+        self.functions_treeview.heading('pelicula', text='Película'); self.functions_treeview.column('pelicula', width=200, anchor='w')
+        self.functions_treeview.heading('hora', text='Hora'); self.functions_treeview.column('hora', width=100, anchor='center')
+        self.functions_treeview.heading('sala', text='Sala'); self.functions_treeview.column('sala', width=100, anchor='center')
         scrollbar = ttk.Scrollbar(functions_frame, orient='vertical', command=self.functions_treeview.yview, bootstyle=ROUND)
         self.functions_treeview.configure(yscrollcommand=scrollbar.set)
-        self.functions_treeview.pack(side='left', fill='both', expand=True)
-        scrollbar.pack(side='right', fill='y')
+        self.functions_treeview.pack(side='left', fill='both', expand=True); scrollbar.pack(side='right', fill='y')
         self.functions_treeview.bind('<<TreeviewSelect>>', self._on_function_select)
 
-        # --- Frame Derecho (Asientos) ---
+        # Frame Derecho (Asientos)
         self.seat_area_frame = ttk.Frame(main_pane, padding="5")
         main_pane.add(self.seat_area_frame, weight=3)
 
@@ -667,171 +531,40 @@ class TheaterGUI:
         purchase_status_frame.grid(row=2, column=0, sticky='ew')
         self.purchase_info_label = ttk.Label(purchase_status_frame, text="Seleccione función y asientos.", anchor='w')
         self.purchase_info_label.pack(side='left', fill='x', expand=True, padx=5)
-        buy_button = ttk.Button(purchase_status_frame, text="Comprar Entradas",
-                                command=self._confirm_purchase, bootstyle=SUCCESS)
+        buy_button = ttk.Button(purchase_status_frame, text="Comprar Entradas", command=self._confirm_purchase, bootstyle=SUCCESS)
         buy_button.pack(side='right', padx=5)
         
-        # --- Estado Inicial Widgets ---
+        # Estado Inicial Widgets
         if not self.show_all_functions_var.get():
-             self._set_filter_widgets_state('enable')
-
-    def _mostrar_ventana_reportes(self) -> None:
-        """Crea y muestra una nueva ventana con la tabla de reportes de funciones."""
-
-        print("Generando reporte completo...")
-        # 1. Obtener datos del Admin
-        try:
-            datos_reporte = self.admin.generar_reporte_completo()
-        except Exception as e:
-            messagebox.showerror("Error Reporte", f"No se pudo generar el reporte:\n{e}")
-            return
-
-        # 2. Crear ventana Toplevel (ventana secundaria)
-        report_window = tk.Toplevel(self.root)
-        report_window.title("Reporte de Funciones - Ventas y Ganancias")
-        report_window.geometry("800x500") # Tamaño inicial para la ventana de reporte
-        report_window.transient(self.root) # Asociarla a la ventana principal
-        report_window.grab_set() # Hacerla modal (opcional, bloquea interacción con principal)
-
-        # --- Centrar Ventana de Reporte ---
-        report_width = 800 # Ancho deseado para esta ventana
-        report_height = 500 # Alto deseado
-        try:
-            # Para Toplevels, update_idletasks suele ser suficiente
-            report_window.update_idletasks() 
-            center_window(report_window, report_width, report_height)
-        except Exception as e:
-             print(f"Advertencia: No se pudo centrar ventana de reporte: {e}")
-             report_window.geometry(f"{report_width}x{report_height}") # Fallback
-
-        # Hacerla modal y asociarla a la principal
-        report_window.transient(self.root) 
-        report_window.grab_set()
-
-        # 3. Crear Frame principal para la ventana de reporte
-        frame = ttk.Frame(report_window, padding="10")
-        frame.pack(fill='both', expand=True)
-
-        # 4. Crear Treeview para la tabla de reporte
-        cols = ('fecha_hora', 'pelicula', 'sala', 'vendidos', 'ganancias')
-        report_tree = ttk.Treeview(frame, columns=cols, show='headings', height=18, bootstyle=INFO)
-
-        # Configurar cabeceras
-        report_tree.heading('fecha_hora', text='Fecha y Hora')
-        report_tree.heading('pelicula', text='Película')
-        report_tree.heading('sala', text='Sala')
-        report_tree.heading('vendidos', text='Entradas Vendidas')
-        report_tree.heading('ganancias', text='Ganancias ($ COP)')
-
-        # Configurar columnas (ancho y alineación)
-        report_tree.column('fecha_hora', width=150, anchor='w')
-        report_tree.column('pelicula', width=250, anchor='w')
-        report_tree.column('sala', width=80, anchor='center')
-        report_tree.column('vendidos', width=100, anchor='e') # Alinear números a la derecha
-        report_tree.column('ganancias', width=120, anchor='e') # Alinear números a la derecha
-
-        # 5. Poblar Treeview con los datos
-        total_vendidos = 0
-        total_ganancias = 0.0
-        if datos_reporte:
-            for item_reporte in datos_reporte:
-                fecha_str = item_reporte['fecha'].strftime(DATE_FORMAT_DISPLAY_FULL)
-                ganancia_str = f"{item_reporte['ganancias_totales']:,.0f}" # Formato moneda
-
-                report_tree.insert('', 'end', values=(
-                    fecha_str,
-                    item_reporte['pelicula'],
-                    item_reporte['sala'],
-                    item_reporte['tiquetes_vendidos'],
-                    ganancia_str
-                ))
-                total_vendidos += item_reporte['tiquetes_vendidos']
-                total_ganancias += item_reporte['ganancias_totales']
-        else:
-            report_tree.insert('', 'end', values=("No hay datos de funciones", "", "", "", ""))
-
-        # 6. Añadir Scrollbar
-        scrollbar = ttk.Scrollbar(frame, orient='vertical', command=report_tree.yview, bootstyle=ROUND)
-        report_tree.configure(yscrollcommand=scrollbar.set)
-
-        report_tree.grid(row=0, column=0, sticky='nsew')
-        scrollbar.grid(row=0, column=1, sticky='ns')
-        frame.rowconfigure(0, weight=1)
-        frame.columnconfigure(0, weight=1)
-
-        # 7. (Opcional) Mostrar Totales
-        total_frame = ttk.Frame(frame, padding="5 0 0 0")
-        total_frame.grid(row=1, column=0, columnspan=2, sticky='ew', pady=(10,0))
-
-        ttk.Label(
-            total_frame, 
-            text=f"Entradas: {total_vendidos}", 
-            font="-weight bold",
-            bootstyle=(INFO, INVERSE)
-            ).pack(side='left', padx=10, ipadx=8, ipady=3)
-        ttk.Label(
-            total_frame, 
-            text=f"Ganancias: ${total_ganancias:,.0f} COP", 
-            font="-weight bold",
-            bootstyle=(SUCCESS, INVERSE)
-            ).pack(side='right', padx=10, ipadx=8, ipady=5)
-
-        # 8. (Opcional) Botón Cerrar
-        close_button = ttk.Button(frame, text="Cerrar", command=report_window.destroy, bootstyle=DANGER)
-        close_button.grid(row=2, column=0, columnspan=2, pady=10)
+             self._set_filter_widgets_state('enable') # Habilitar filtros normales
 
     # --- Métodos de Actualización y Eventos ---
 
     def _on_filter_apply(self, event=None) -> None:
-        """Obtiene todos los filtros, busca funciones y actualiza GUI, SI 'Mostrar Todas' está apagado."""
-        # No hacer nada si estamos en modo 'Mostrar Todas'
-        if self.show_all_functions_var.get():
-            return 
-
-        # --- CORRECCIÓN: Inicializar variable antes del try ---
-        incluir_empezadas_arg = self.include_started_var.get() # Leer valor actual como default
-
+        """Obtiene filtros normales, busca funciones y actualiza GUI, SI 'Mostrar Todas' está apagado."""
+        if self.show_all_functions_var.get(): return # No hacer nada si se muestran todas
+        
+        incluir_empezadas_arg = self.include_started_var.get() # Leer estado actual
         try:
-            # 1. Obtener Fecha
             date_str = self.date_entry_widget.entry.get()
-            date_format_python = DATE_FORMAT_DISPLAY_DATE # Ej: '%d/%m/%Y'
-            selected_date_obj = datetime.strptime(date_str, date_format_python).date()
+            selected_date_obj = datetime.strptime(date_str, DATE_FORMAT_DISPLAY_DATE).date()
             selected_datetime = datetime.combine(selected_date_obj, datetime.min.time())
-            # print(f"Filtrando funciones para: {selected_datetime.strftime('%Y-%m-%d')}") # Log opcional
 
-            # --- Habilitar/Deshabilitar Checkbox "Incluir Empezadas" ---
-            # (Esta lógica ahora se ejecuta siempre que se aplica el filtro)
-            es_hoy = (selected_date_obj == datetime.now().date())
-            estado_checkbox_empezadas = 'normal' if es_hoy else 'disabled' # Solo habilitado si es hoy? O siempre habilitado? Vamos a dejarlo siempre habilitado por ahora, ya que la lógica aplica a cualquier día.
-            # --- REVISADO: Mantener habilitado a menos que 'Mostrar Todas' esté activo ---
-            # El estado se maneja en _set_filter_widgets_state basado en show_all_var
-            # No necesitamos deshabilitarlo aquí basado en 'es_hoy'.
-            # try: self.include_started_check.configure(state=estado_checkbox_empezadas) ...
-
-            # --- 2. Obtener otros filtros ---
             movie_filter = self.movie_filter_var.get()
             sala_filter = self.sala_filter_var.get()
-            # Leer el estado actual del checkbox (puede haber cambiado desde inicio del método si hubo error antes)
-            incluir_empezadas_arg = self.include_started_var.get() 
-            print(f"Filtros aplicados: Fecha={date_str}, Peli='{movie_filter}', Sala='{sala_filter}', IncluirEmpezadas={incluir_empezadas_arg}")
+            # print(f"Filtros: {date_str}, Peli='{movie_filter}', Sala='{sala_filter}', IncluirEmpezadas={incluir_empezadas_arg}") # Log
 
-            # --- 3. Obtener Funciones del Admin ---
             todas_funciones_dia = self.admin.get_funciones_disponibles_por_fecha(
                 selected_datetime, incluir_ya_empezadas=incluir_empezadas_arg)
 
-            # --- 4. Actualizar Combobox Películas ---
             self._actualizar_combobox_peliculas(todas_funciones_dia)
-            movie_filter = self.movie_filter_var.get() # Re-leer por si se reseteó
+            movie_filter = self.movie_filter_var.get() # Re-leer por si cambió
 
-            # --- 5. Filtrar Funciones en GUI ---
             filtered_functions = self._filtrar_funciones_gui(todas_funciones_dia, movie_filter, sala_filter)
-
-            # --- 6. Actualizar Treeview ---
             self._poblar_treeview_funciones(filtered_functions, mostrar_fecha=False)
 
         except ValueError as e:
-            # Error si el formato de fecha en la caja es inválido
-            messagebox.showerror("Error de Fecha", f"Formato de fecha inválido: '{date_str}'. Use {date_format_python}.\n({e})")
+            messagebox.showerror("Error de Fecha", f"Formato de fecha inválido: '{date_str}'. Use {DATE_FORMAT_DISPLAY_DATE}.\n({e})")
             self._limpiar_vista_funciones_y_asientos(clear_functions=True, clear_seats=True)
         except Exception as e:
             messagebox.showerror("Error Aplicando Filtros", f"Ocurrió un error: {e}")
@@ -849,31 +582,30 @@ class TheaterGUI:
 
         if selected_function:
             self.funcion_seleccionada = selected_function
-            print(f"Función seleccionada: {self.funcion_seleccionada}")
             self.asientos_seleccionados_para_compra = []
             self._update_seat_display()
             self._update_purchase_info()
-        else:
-            print(f"Error: No se encontró objeto Funcion para iid {selected_iid}")
+        else: # No debería ocurrir si map está sincronizado
             self.funcion_seleccionada = None
             self._clear_seat_display(); self._update_purchase_info()
 
+    # --- CORREGIDO: Habilita/Deshabilita todos los filtros normales ---
     def _set_filter_widgets_state(self, state: str) -> None:
         """Habilita ('enable') o deshabilita ('disabled') los filtros normales."""
-        disabled_state = 'disabled' if state == 'disabled' else 'normal'
+        widget_state = 'disabled' if state == 'disabled' else 'normal'
         combo_state = 'disabled' if state == 'disabled' else 'readonly'
         try:
-            self.date_entry_widget.configure(state=disabled_state)
-            # Habilitar movie combobox solo si tiene opciones cargadas
-            if self.movie_combobox['values'] and len(self.movie_combobox['values']) > 1 and state != 'disabled':
+            self.date_entry_widget.configure(state=widget_state)
+            # Habilitar movie combobox solo si tiene opciones y no estamos deshabilitando
+            if self.movie_combobox.cget('values') and len(self.movie_combobox.cget('values')) > 1 and state != 'disabled':
                  self.movie_combobox.configure(state=combo_state)
             else:
                  self.movie_combobox.configure(state='disabled') 
             self.sala_combobox.configure(state=combo_state)
-            # Usar 'normal' para habilitar Checkbutton
-            self.include_started_check.configure(state=disabled_state) 
-        except Exception as e: # Captura más genérica por si widget no existe aún
-             print(f"Advertencia: Error configurando estado widgets filtro: {e}")
+            # El checkbutton usa 'normal'/'disabled'
+            self.include_started_check.configure(state=widget_state) 
+        except Exception as e: 
+             print(f"Advertencia: Error config. estado widgets filtro: {e}")
 
     def _on_toggle_show_all(self) -> None:
         """Manejador para el checkbox 'Mostrar Todas'."""
@@ -889,36 +621,35 @@ class TheaterGUI:
         print("Cargando todas las funciones...")
         try:
             todas_las_funciones = self.admin.get_todas_las_funciones()
-            # Actualizar combobox de películas con todas las películas existentes
             self._actualizar_combobox_peliculas(todas_las_funciones)
-            # Poblar treeview con todas, mostrando fecha y hora
-            self._poblar_treeview_funciones(todas_las_funciones, mostrar_fecha=True)
+            self._poblar_treeview_funciones(todas_las_funciones, mostrar_fecha=True) # Mostrar fecha completa
         except Exception as e:
             messagebox.showerror("Error Cargando Funciones", f"Error: {e}")
-            self._limpiar_vista_funciones_y_asientos()
+            self._limpiar_vista_funciones_y_asientos(clear_functions=True, clear_seats=True)
 
     # --- Métodos Helper de GUI ---
 
     def _actualizar_combobox_peliculas(self, lista_funciones: List[Funcion]) -> None:
          """Actualiza las opciones del combobox de películas."""
+         nombres = ["Todas"]
          if lista_funciones:
-             nombres = sorted(list(set(f.pelicula.nombre for f in lista_funciones)))
-             current_selection = self.movie_filter_var.get()
-             self.movie_combobox['values'] = ["Todas"] + nombres
-             if current_selection in self.movie_combobox['values']:
-                 self.movie_filter_var.set(current_selection)
-             else:
-                 self.movie_filter_var.set("Todas")
-             # Habilitar si no está deshabilitado por 'Mostrar Todas'
-             if not self.show_all_functions_var.get():
-                  self.movie_combobox.config(state='readonly')
+             nombres.extend(sorted(list(set(f.pelicula.nombre for f in lista_funciones))))
+         
+         current_selection = self.movie_filter_var.get()
+         self.movie_combobox['values'] = nombres
+         
+         if current_selection in nombres:
+             self.movie_filter_var.set(current_selection)
          else:
-             self.movie_combobox['values'] = ["Todas"]
-             self.movie_combobox.config(state='disabled')
              self.movie_filter_var.set("Todas")
 
+         # Habilitar/Deshabilitar basado en opciones y modo 'Mostrar Todas'
+         new_state = 'readonly' if len(nombres) > 1 and not self.show_all_functions_var.get() else 'disabled'
+         self.movie_combobox.config(state=new_state)
+
+
     def _filtrar_funciones_gui(self, funciones: List[Funcion], movie_filter: str, sala_filter: str) -> List[Funcion]:
-         """Filtra una lista de funciones basado en los criterios de la GUI."""
+         """Filtra lista de funciones según comboboxes."""
          resultado = funciones
          if movie_filter != "Todas":
              resultado = [f for f in resultado if f.pelicula.nombre == movie_filter]
@@ -927,9 +658,9 @@ class TheaterGUI:
          return resultado
 
     def _poblar_treeview_funciones(self, funciones: List[Funcion], mostrar_fecha: bool = False) -> None:
-        """Limpia y puebla el Treeview con la lista de funciones dada."""
+        """Limpia y puebla el Treeview con funciones."""
         for item in self.functions_treeview.get_children(): self.functions_treeview.delete(item)
-        self.function_map = {} # Resetear mapa iid -> func
+        self.function_map = {}
         
         if funciones:
             for func in funciones:
@@ -943,32 +674,39 @@ class TheaterGUI:
              self.functions_treeview.insert('', 'end', values=(msg, "", ""))
         
         print(msg)
-        self._limpiar_vista_funciones_y_asientos(clear_seats=True) # Limpiar asientos al cambiar lista
+        # Limpiar SIEMPRE asientos al cambiar la lista de funciones mostrada
+        self._limpiar_vista_funciones_y_asientos(clear_functions=False, clear_seats=True) 
 
     def _limpiar_vista_funciones_y_asientos(self, clear_functions: bool = False, clear_seats: bool = True) -> None:
-        """Limpia selectivamente el treeview y/o el área de asientos."""
+        """Limpia selectivamente treeview y/o área de asientos."""
         if clear_functions:
             for item in self.functions_treeview.get_children(): self.functions_treeview.delete(item)
             self.function_map = {}
+            # También limpiar combobox de películas si se limpia el treeview
+            self._actualizar_combobox_peliculas([]) 
         if clear_seats:
             self._clear_seat_display()
             self.funcion_seleccionada = None
             self.asientos_seleccionados_para_compra = []
             self._update_purchase_info()
+            # Resetear texto de etiquetas de reporte si existen
+            if hasattr(self, 'report_vendidos_label'): self.report_vendidos_label.config(text="Vendidos: -")
+            if hasattr(self, 'report_ganancias_label'): self.report_ganancias_label.config(text="Ganancias: -")
+
 
     def _clear_seat_display(self) -> None:
-        """Limpia el área de asientos y muestra mensaje por defecto."""
+        """Limpia área de asientos y muestra mensaje."""
         for widget in self.seat_area_frame.winfo_children(): widget.destroy()
         ttk.Label(self.seat_area_frame, text="Seleccione una función para ver los asientos.").pack(padx=20, pady=50)
 
     def _update_seat_display(self) -> None:
-        """Limpia y redibuja pantalla y asientos para la función seleccionada."""
+        """Limpia y redibuja pantalla y asientos."""
         for widget in self.seat_area_frame.winfo_children(): widget.destroy()
         if not self.funcion_seleccionada:
             self._clear_seat_display(); return
 
         # --- CORREGIDO: Usar tk.Frame/tk.Label para pantalla ---
-        screen_frame = tk.Frame(self.seat_area_frame, bg='black', height=25) # Un poco más alta
+        screen_frame = tk.Frame(self.seat_area_frame, bg='black', height=25) 
         screen_frame.pack(side='bottom', fill='x', padx=50, pady=(15, 25))
         screen_frame.pack_propagate(False) 
         screen_label = tk.Label(screen_frame, text="PANTALLA", bg='black', fg='white', font=('Calibri', 11, 'bold')) 
@@ -978,7 +716,8 @@ class TheaterGUI:
 
     # --- CORREGIDO: Usa tk.Frame y tk.Button ---
     def mostrar_asientos(self, parent_frame: ttk.Frame, funcion: Funcion) -> None:
-        """Dibuja la cuadrícula de asientos usando tk.Button y fondo explícito."""
+        """Dibuja cuadrícula de asientos usando tk.Button y fondo explícito."""
+        # --- RECOMENDACIÓN FUERTE: Asegurar que las imágenes PNG tengan fondo opaco COLOR_FONDO_ASIENTOS ---
         seats_layout = [11]*2 + [9]*2 + [7]*5 + [5]*1
         num_rows = len(seats_layout)
         max_seats_in_row = 11
@@ -986,12 +725,11 @@ class TheaterGUI:
         
         self.mapa_widgets_asientos = {}
 
-        # --- CORREGIDO: Usar tk.Frame para asegurar bg ---
         grid_frame = tk.Frame(parent_frame, bg=COLOR_FONDO_ASIENTOS) 
         grid_frame.pack(side='top', expand=True, pady=(20, 10))
 
         asiento_index = 0
-        asientos_de_la_funcion = funcion.teatro_funcion.asientos
+        asientos_de_la_funcion = funcion.teatro_funcion.asientos # Usa la copia
 
         for i in range(num_rows):
             num_seats_this_row = seats_layout[i]
@@ -1001,15 +739,14 @@ class TheaterGUI:
 
             for j in range(num_grid_cols):
                 widget_to_place = None
-                
-                # Pasillos / Vacíos (usar tk.Frame)
                 is_seat_column = start_col <= j <= end_col
-                if j == 0 or j == num_grid_cols - 1 or not is_seat_column:
-                    widget_to_place = tk.Frame(grid_frame, width=SEAT_IMG_WIDTH+5, height=SEAT_IMG_HEIGHT+5, bg=COLOR_FONDO_ASIENTOS)
-                    if j == 0 or j == num_grid_cols - 1: # Pasillos más angostos
-                        widget_to_place.config(width=30)
                 
-                # Asientos (usar tk.Button)
+                # Pasillos / Vacíos
+                if j == 0 or j == num_grid_cols - 1 or not is_seat_column:
+                    width = 30 if (j == 0 or j == num_grid_cols - 1) else SEAT_IMG_WIDTH + 5
+                    widget_to_place = tk.Frame(grid_frame, width=width, height=SEAT_IMG_HEIGHT+5, bg=COLOR_FONDO_ASIENTOS)
+                
+                # Asientos
                 elif is_seat_column:
                     if asiento_index < len(asientos_de_la_funcion):
                         asiento = asientos_de_la_funcion[asiento_index]
@@ -1022,20 +759,19 @@ class TheaterGUI:
                         elif is_available and self.img_available: img = self.img_available
 
                         seat_btn = None # Inicializar
-                        if img: # Crear botón con imagen
+                        if img: # Usar tk.Button con imagen
                             seat_btn = tk.Button(grid_frame, image=img,
                                                  bg=COLOR_FONDO_ASIENTOS, borderwidth=0, 
                                                  highlightthickness=0, relief='flat', 
                                                  activebackground=COLOR_FONDO_ASIENTOS)
                             seat_btn.image = img
                         else: # Fallback con texto
-                            fb_text = asiento.id
-                            if is_selected: fb_text = f"[{asiento.id}]"
-                            color = "red" if not is_available else "green"
-                            if is_selected: color = "gold" 
+                            fb_text = asiento.id; color = "gray" # Default fallback
+                            if not is_available: color = "red"
+                            elif is_selected: color = "gold"; fb_text = f"[{asiento.id}]"
+                            elif is_available: color = "green"
                             seat_btn = tk.Button(grid_frame, text=fb_text, fg="white", bg=color,
-                                                 width=5, height=2, borderwidth=0, 
-                                                 relief='flat', activebackground=color)
+                                                 width=5, height=2, borderwidth=0, relief='flat', activebackground=color)
 
                         if seat_btn:
                             seat_btn.config(command=lambda a=asiento, b=seat_btn: self.on_seat_click(a, b))
@@ -1045,15 +781,15 @@ class TheaterGUI:
                         
                         widget_to_place = seat_btn
                         asiento_index += 1
-                    else: # Error Layout
+                    else: # Error de Layout/Índice
                          print(f"Error Layout: Índice {asiento_index} fuera de rango.")
                          widget_to_place = tk.Frame(grid_frame, width=SEAT_IMG_WIDTH+5, height=SEAT_IMG_HEIGHT+5, bg="magenta")
 
-                # Colocar widget
+                # Colocar widget en grid
                 if widget_to_place:
                     widget_to_place.grid(row=i, column=j, padx=1, pady=1)
                     if isinstance(widget_to_place, tk.Frame):
-                         widget_to_place.pack_propagate(False)
+                         widget_to_place.pack_propagate(False) # Evitar que Frames se encojan
 
     def _on_seat_enter(self, event):
         """Cambia cursor a mano al entrar."""
@@ -1063,18 +799,14 @@ class TheaterGUI:
         """Restaura cursor al salir."""
         event.widget.config(cursor="")
 
-    # --- CORREGIDO: Type hint a tk.Button ---
     def on_seat_click(self, asiento: Asiento, button: tk.Button) -> None:
         """Manejador de clic en asiento para selección/deselección."""
-        if not self.funcion_seleccionada:
-            messagebox.showwarning("Selección Requerida", "Seleccione una función primero.")
-            return
-        if self.funcion_seleccionada.fechaLimite_pasada():
-             messagebox.showwarning("Tiempo Excedido", "El tiempo para comprar/seleccionar ha expirado.")
-             return
+        if not self.funcion_seleccionada: messagebox.showwarning("Selección Requerida", "Seleccione una función primero."); return
+        if self.funcion_seleccionada.fechaLimite_pasada(): messagebox.showwarning("Tiempo Excedido", "El tiempo para comprar/seleccionar ha expirado."); return
 
-        # Actuar solo si el asiento NO está ya comprado (rojo)
+        # Solo permitir interactuar si el asiento está disponible (verde)
         if asiento.está_disponible():
+            img_actualizar = None
             if asiento in self.asientos_seleccionados_para_compra: # Deseleccionar
                 self.asientos_seleccionados_para_compra.remove(asiento)
                 img_actualizar = self.img_available
@@ -1085,14 +817,18 @@ class TheaterGUI:
                 fb_text = f"[{asiento.id}]"
             
             # Actualizar apariencia
-            if img_actualizar:
+            if img_actualizar and hasattr(button,'image'): # Asegurar que el botón usa imagen
                  button.config(image=img_actualizar)
                  button.image = img_actualizar
-            else: button.config(text=fb_text)
+            elif not hasattr(button,'image'): # Fallback texto
+                 button.config(text=fb_text)
+                 # Reajustar color de fallback si es necesario (ej. a verde o amarillo)
+                 new_color = "green" if asiento in self.asientos_seleccionados_para_compra else "gold" # Ejemplo
+                 button.config(bg=new_color, activebackground=new_color)
         
-        else: # Asiento ya ocupado permanentemente (rojo)
-             if asiento not in self.asientos_seleccionados_para_compra: # Evitar msg si se intenta deseleccionar uno ya ocupado (no debería pasar)
-                 messagebox.showinfo("Asiento Ocupado", f"El asiento {asiento.id} ya está ocupado.")
+        elif asiento not in self.asientos_seleccionados_para_compra: # Ocupado (rojo) y no seleccionado -> Mostrar info
+             messagebox.showinfo("Asiento Ocupado", f"El asiento {asiento.id} ya está ocupado.")
+        # Si está ocupado Y seleccionado (no debería pasar si se carga bien), no hacer nada al click
 
         self._update_purchase_info()
 
@@ -1108,88 +844,141 @@ class TheaterGUI:
 
     def _confirm_purchase(self) -> None:
         """Inicia proceso de compra con validación de cliente."""
-        # 1. Validaciones básicas
+        # 1. Validaciones previas
         if not self.funcion_seleccionada or not self.asientos_seleccionados_para_compra or self.funcion_seleccionada.fechaLimite_pasada():
-             # Mostrar mensajes apropiados
              if not self.funcion_seleccionada: msg = "Seleccione una función primero."
              elif not self.asientos_seleccionados_para_compra: msg = "Seleccione al menos un asiento."
-             else: msg = "Ya no se pueden comprar entradas para esta función (tiempo excedido)."
-             messagebox.showwarning("Acción Requerida", msg)
-             return
+             else: msg = "Ya no se pueden comprar entradas (tiempo excedido)."
+             messagebox.showwarning("Acción Requerida", msg); return
 
         # --- 2. Obtener y Validar Datos del Cliente ---
         cliente: Optional[Cliente] = None
-        while cliente is None: # Bucle hasta obtener cliente válido o cancelar
+        while cliente is None: 
             id_cliente = simpledialog.askstring("Identificación Cliente", "Ingrese ID cliente (10 dígitos numéricos):", parent=self.root)
-            if id_cliente is None: return # Usuario canceló ID
+            if id_cliente is None: return # Canceló
 
             # Validación ID
+            id_cliente = id_cliente.strip() # Quitar espacios extra
             if not id_cliente.isdigit() or len(id_cliente) != 10:
-                messagebox.showerror("ID Inválido", "El ID debe contener exactamente 10 dígitos numéricos.")
-                continue # Volver a pedir ID
+                messagebox.showerror("ID Inválido", "El ID debe contener exactamente 10 dígitos numéricos."); continue
 
             cliente_existente = self.admin.get_cliente(id_cliente)
-            if cliente_existente:
-                cliente = cliente_existente # Usar cliente existente
-                break # Salir del bucle de cliente
+            if cliente_existente: cliente = cliente_existente; break
 
-            else: # Cliente nuevo, pedir nombre
-                while True: # Bucle para validar nombre
-                     nombre_cliente = simpledialog.askstring("Nombre Cliente Nuevo", f"Cliente ID {id_cliente} no encontrado.\nIngrese el nombre (solo letras y espacios):", parent=self.root)
-                     if nombre_cliente is None: return # Usuario canceló nombre
+            else: # Cliente nuevo
+                while True: 
+                     nombre_cliente = simpledialog.askstring("Nombre Cliente Nuevo", f"Cliente ID {id_cliente} no encontrado.\nIngrese nombre (solo letras/espacios):", parent=self.root)
+                     if nombre_cliente is None: return # Canceló
                      
-                     # Validación Nombre (solo letras y espacios permitidos)
-                     if nombre_cliente.strip() and all(c.isalpha() or c.isspace() for c in nombre_cliente):
-                         cliente = Cliente(nombre_cliente.strip(), id_cliente)
+                     nombre_cliente = nombre_cliente.strip()
+                     # Validación Nombre (permite letras y espacios internos)
+                     if nombre_cliente and re.fullmatch(r"[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+", nombre_cliente):
+                         cliente = Cliente(nombre_cliente, id_cliente)
                          self.admin.add_cliente(cliente)
-                         break # Salir del bucle de nombre
+                         break # Sale del bucle de nombre
                      else:
                           messagebox.showerror("Nombre Inválido", "El nombre solo debe contener letras y espacios, y no puede estar vacío.")
-                          # Continuar bucle de nombre
-                break # Salir del bucle de cliente si se creó uno nuevo
+                break # Sale del bucle de cliente
 
-        # --- 3. Intentar Compra ---
-        if not cliente: # Doble chequeo por si algo falló
-             messagebox.showerror("Error", "No se pudo obtener la información del cliente.")
-             return
+        if not cliente: messagebox.showerror("Error", "No se pudo obtener info del cliente."); return
              
+        # --- 3. Intentar Compra ---
         try:
             ids_a_comprar = [a.id for a in self.asientos_seleccionados_para_compra]
             tiquetes = self.admin.comprar_tiquetes(self.funcion_seleccionada, cliente, ids_a_comprar, PRECIO_TIQUETE)
             
-            # 4. Éxito
-            messagebox.showinfo("Compra Exitosa", f"Compra realizada para {cliente.nombre} (ID: {cliente.id}).\nAsientos: {', '.join(ids_a_comprar)}")
+            messagebox.showinfo("Compra Exitosa", f"Compra para {cliente.nombre} (ID: {cliente.id}).\nAsientos: {', '.join(ids_a_comprar)}")
             self.asientos_seleccionados_para_compra = []
             self._update_purchase_info()
-            self._update_seat_display() # Refrescar
+            self._update_seat_display() # Refrescar asientos
 
         except (ValueError, TypeError) as e:
              messagebox.showerror("Error en Compra", f"No se pudo completar:\n{e}")
 
+    # --- Reporte ---
+    def _mostrar_ventana_reportes(self) -> None:
+        """Crea y muestra ventana modal con tabla de reportes."""
+        print("Generando reporte completo...")
+        try:
+            datos_reporte = self.admin.generar_reporte_completo()
+        except Exception as e:
+            messagebox.showerror("Error Reporte", f"No se pudo generar:\n{e}"); return
+
+        report_window = tk.Toplevel(self.root)
+        report_window.title("Reporte Funciones - Ventas y Ganancias")
+        
+        report_width, report_height = 800, 500
+        center_window(report_window, report_width, report_height) # Centrar
+        report_window.transient(self.root); report_window.grab_set() 
+
+        frame = ttk.Frame(report_window, padding="10")
+        frame.pack(fill='both', expand=True)
+
+        cols = ('fecha_hora', 'pelicula', 'sala', 'vendidos', 'ganancias')
+        report_tree = ttk.Treeview(frame, columns=cols, show='headings', height=18, bootstyle=INFO)
+        
+        report_tree.heading('fecha_hora', text='Fecha y Hora'); report_tree.column('fecha_hora', width=150, anchor='w')
+        report_tree.heading('pelicula', text='Película'); report_tree.column('pelicula', width=250, anchor='w')
+        report_tree.heading('sala', text='Sala'); report_tree.column('sala', width=80, anchor='center')
+        report_tree.heading('vendidos', text='Entradas Vendidas'); report_tree.column('vendidos', width=100, anchor='e')
+        report_tree.heading('ganancias', text='Ganancias (COP)'); report_tree.column('ganancias', width=120, anchor='e')
+
+        total_vendidos, total_ganancias = 0, 0.0
+        if datos_reporte:
+            for item in datos_reporte:
+                fecha_str = item['fecha'].strftime(DATE_FORMAT_DISPLAY_FULL)
+                # --- CORREGIDO: Usar :.2f para dos decimales ---
+                ganancia_str = f"{item['ganancias_totales']:,.0f}" 
+                report_tree.insert('', 'end', values=(fecha_str, item['pelicula'], item['sala'], item['tiquetes_vendidos'], ganancia_str))
+                total_vendidos += item['tiquetes_vendidos']
+                total_ganancias += item['ganancias_totales']
+        else:
+            report_tree.insert('', 'end', values=("No hay datos", "", "", "", ""))
+
+        scrollbar = ttk.Scrollbar(frame, orient='vertical', command=report_tree.yview, bootstyle=ROUND)
+        report_tree.configure(yscrollcommand=scrollbar.set)
+        
+        report_tree.grid(row=0, column=0, sticky='nsew')
+        scrollbar.grid(row=0, column=1, sticky='ns')
+        frame.rowconfigure(0, weight=1); frame.columnconfigure(0, weight=1)
+
+        total_frame = ttk.Frame(frame, padding="5 0 0 0")
+        total_frame.grid(row=1, column=0, columnspan=2, sticky='ew', pady=(10,0))
+        
+        # --- CORREGIDO: Totales con .2f ---
+        ttk.Label(total_frame, text=f"Entradas: {total_vendidos}", font="-weight bold", bootstyle=(INFO, INVERSE)).pack(side='left', padx=10, ipadx=8, ipady=5)
+        ttk.Label(total_frame, text=f"Ganancias: ${total_ganancias:,.0f} COP", font="-weight bold", bootstyle=(SUCCESS, INVERSE)).pack(side='right', padx=10, ipadx=8, ipady=5)
+        
+        close_button = ttk.Button(frame, text="Cerrar", command=report_window.destroy, bootstyle=DANGER)
+        close_button.grid(row=2, column=0, columnspan=2, pady=10)
+
 # --- Función Principal ---
 
 def main() -> None:
-    """Inicializa Admin, carga datos, aplica tema y ejecuta la GUI."""
+    """Inicializa Admin, carga datos, aplica tema, centra y ejecuta la GUI."""
     print("Iniciando aplicación Cine...")
     admin = Admin("Cine Cultural Barranquilla")
     admin.cargar_funciones_desde_archivo()
-    admin._cargar_y_aplicar_reservas() # Cargar estado persistente
+    # --- CORREGIDO: Llamada al método renombrado ---
+    admin._cargar_y_aplicar_reservas() 
 
-    # Inicializar con ttkbootstrap y tema 'flatly'
     root = ttk.Window(themename="flatly") 
+    # Quitar la configuración de estilo redundante aquí, se hace en GUI.__init__ si es necesario
+    # style = ttk.Style(root) ... 
 
     # --- Centrar Ventana Principal ---
     try:
-        # Parsear dimensiones desde la constante WINDOW_GEOMETRY
         main_width, main_height = map(int, WINDOW_GEOMETRY.split('x'))
-        # Técnica para centrar antes de mostrar y evitar parpadeo
-        root.withdraw()         # Ocultar temporalmente
-        root.update_idletasks() # Asegurar que winfo_ esté listo
-        center_window(root, main_width, main_height) # Llamar a la función auxiliar
-        root.deiconify()        # Mostrar la ventana ya centrada
+        root.withdraw()         
+        # El título se puede poner antes o después de centrar
+        root.title(APP_TITLE) 
+        root.update_idletasks() 
+        center_window(root, main_width, main_height) 
+        root.deiconify()        
     except Exception as e:
         print(f"Advertencia: No se pudo parsear/centrar ventana principal: {e}")
-        root.geometry(WINDOW_GEOMETRY) # Usar geometría por defecto si falla
+        root.title(APP_TITLE) # Asegurar título
+        root.geometry(WINDOW_GEOMETRY) 
 
     app = TheaterGUI(root, admin)
     root.mainloop()
