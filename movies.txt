@@ -1,8 +1,8 @@
 2/05/2025 - 12:00;Barbie;Comedy;Sala 1
 2/05/2025 - 16:30;The Matrix;Sci-Fi;Sala 1
-2/05/2025 - 12:30;Coco;Animation;Sala 2
+2/05/2025 - 14:30;Coco;Animation;Sala 2
 2/05/2025 - 17:00;Parasite;Thriller;Sala 2
-2/05/2025 - 13:00;Inception;Sci-Fi;Sala 3
+2/05/2025 - 10:00;Inception;Sci-Fi;Sala 3
 2/05/2025 - 17:30;The Godfather;Drama;Sala 3
 3/05/2025 - 12:00;Avengers: Endgame;Action;Sala 1
 3/05/2025 - 16:30;Coco;Animation;Sala 1

@@ -1,2 +1,412 @@
-02/05/2025 - 16:30;Sala 1;The Matrix;F3
+02/05/2025 - 12:00;Sala 1;Barbie;F8
+02/05/2025 - 12:00;Sala 1;Barbie;G7
+02/05/2025 - 12:00;Sala 1;Barbie;H1
+02/05/2025 - 12:00;Sala 1;Barbie;G8
+02/05/2025 - 12:00;Sala 1;Barbie;H6
+02/05/2025 - 12:00;Sala 1;Barbie;G8
+02/05/2025 - 12:00;Sala 1;Barbie;J5
+02/05/2025 - 12:00;Sala 1;Barbie;J2
+02/05/2025 - 12:00;Sala 1;Barbie;I4
+02/05/2025 - 12:00;Sala 1;Barbie;I3
+02/05/2025 - 12:00;Sala 1;Barbie;D8
+02/05/2025 - 12:00;Sala 1;Barbie;E1
+02/05/2025 - 12:00;Sala 1;Barbie;E2
+02/05/2025 - 12:00;Sala 1;Barbie;E3
+02/05/2025 - 12:00;Sala 1;Barbie;F1
+02/05/2025 - 12:00;Sala 1;Barbie;F2
+02/05/2025 - 12:00;Sala 1;Barbie;F3
+02/05/2025 - 12:00;Sala 1;Barbie;D5
+02/05/2025 - 12:00;Sala 1;Barbie;D2
+02/05/2025 - 12:00;Sala 1;Barbie;A3
+02/05/2025 - 12:00;Sala 1;Barbie;F2
+02/05/2025 - 12:00;Sala 1;Barbie;A1
+02/05/2025 - 12:00;Sala 1;Barbie;A8
+02/05/2025 - 12:00;Sala 1;Barbie;A4
+02/05/2025 - 12:00;Sala 1;Barbie;G6
+
 02/05/2025 - 16:30;Sala 1;The Matrix;F4
+02/05/2025 - 16:30;Sala 1;The Matrix;G7
+02/05/2025 - 16:30;Sala 1;The Matrix;H1
+02/05/2025 - 16:30;Sala 1;The Matrix;G8
+02/05/2025 - 16:30;Sala 1;The Matrix;H6
+02/05/2025 - 16:30;Sala 1;The Matrix;J5
+02/05/2025 - 16:30;Sala 1;The Matrix;J2
+02/05/2025 - 16:30;Sala 1;The Matrix;I4
+02/05/2025 - 16:30;Sala 1;The Matrix;I3
+02/05/2025 - 16:30;Sala 1;The Matrix;D8
+02/05/2025 - 16:30;Sala 1;The Matrix;E1
+02/05/2025 - 16:30;Sala 1;The Matrix;B4
+02/05/2025 - 16:30;Sala 1;The Matrix;B5
+02/05/2025 - 16:30;Sala 1;The Matrix;C5
+02/05/2025 - 16:30;Sala 1;The Matrix;D7
+02/05/2025 - 16:30;Sala 1;The Matrix;A7
+02/05/2025 - 16:30;Sala 1;The Matrix;A6
+02/05/2025 - 16:30;Sala 1;The Matrix;G5
+02/05/2025 - 16:30;Sala 1;The Matrix;F6
+02/05/2025 - 16:30;Sala 1;The Matrix;F7
+02/05/2025 - 16:30;Sala 1;The Matrix;D4
+02/05/2025 - 16:30;Sala 1;The Matrix;D3
+02/05/2025 - 16:30;Sala 1;The Matrix;D2
+02/05/2025 - 16:30;Sala 1;The Matrix;A3
+02/05/2025 - 16:30;Sala 1;The Matrix;B3
+02/05/2025 - 16:30;Sala 1;The Matrix;B2
+02/05/2025 - 16:30;Sala 1;The Matrix;E6
+02/05/2025 - 16:30;Sala 1;The Matrix;E7
+02/05/2025 - 16:30;Sala 1;The Matrix;E8
+02/05/2025 - 16:30;Sala 1;The Matrix;I7
+02/05/2025 - 16:30;Sala 1;The Matrix;J8
+02/05/2025 - 16:30;Sala 1;The Matrix;F8
+02/05/2025 - 16:30;Sala 1;The Matrix;J6
+02/05/2025 - 16:30;Sala 1;The Matrix;H3
+02/05/2025 - 16:30;Sala 1;The Matrix;E3
+02/05/2025 - 16:30;Sala 1;The Matrix;E4
+
+02/05/2025 - 12:00;Sala 1;Barbie;A1
+02/05/2025 - 12:00;Sala 1;Barbie;B5
+02/05/2025 - 12:00;Sala 1;Barbie;B6
+02/05/2025 - 12:00;Sala 1;Barbie;C8
+02/05/2025 - 12:00;Sala 1;Barbie;D1
+02/05/2025 - 12:00;Sala 1;Barbie;C1
+02/05/2025 - 12:00;Sala 1;Barbie;C2
+02/05/2025 - 12:00;Sala 1;Barbie;C5
+02/05/2025 - 12:00;Sala 1;Barbie;C4
+02/05/2025 - 12:00;Sala 1;Barbie;D6
+02/05/2025 - 12:00;Sala 1;Barbie;E6
+02/05/2025 - 12:00;Sala 1;Barbie;E4
+02/05/2025 - 12:00;Sala 1;Barbie;E3
+02/05/2025 - 12:00;Sala 1;Barbie;E2
+02/05/2025 - 12:00;Sala 1;Barbie;G2
+02/05/2025 - 12:00;Sala 1;Barbie;G3
+02/05/2025 - 12:00;Sala 1;Barbie;G4
+02/05/2025 - 12:00;Sala 1;Barbie;G6
+02/05/2025 - 12:00;Sala 1;Barbie;G1
+02/05/2025 - 12:00;Sala 1;Barbie;H8
+02/05/2025 - 12:00;Sala 1;Barbie;H1
+02/05/2025 - 12:00;Sala 1;Barbie;H7
+02/05/2025 - 12:00;Sala 1;Barbie;H6
+02/05/2025 - 12:00;Sala 1;Barbie;I6
+02/05/2025 - 12:00;Sala 1;Barbie;I7
+02/05/2025 - 12:00;Sala 1;Barbie;J5
+02/05/2025 - 12:00;Sala 1;Barbie;J6
+02/05/2025 - 12:00;Sala 1;Barbie;I3
+02/05/2025 - 12:00;Sala 1;Barbie;J2
+02/05/2025 - 12:00;Sala 1;Barbie;J3
+02/05/2025 - 12:00;Sala 1;Barbie;F1
+02/05/2025 - 12:00;Sala 1;Barbie;F2
+02/05/2025 - 12:00;Sala 1;Barbie;F5
+02/05/2025 - 12:00;Sala 1;Barbie;F6
+02/05/2025 - 12:00;Sala 1;Barbie;F4
+02/05/2025 - 12:00;Sala 1;Barbie;D4
+02/05/2025 - 12:00;Sala 1;Barbie;A7
+02/05/2025 - 12:00;Sala 1;Barbie;A8
+02/05/2025 - 12:00;Sala 1;Barbie;B1
+02/05/2025 - 12:00;Sala 1;Barbie;C6
+02/05/2025 - 12:00;Sala 1;Barbie;D8
+02/05/2025 - 12:00;Sala 1;Barbie;E8
+02/05/2025 - 12:00;Sala 1;Barbie;A4
+02/05/2025 - 12:00;Sala 1;Barbie;A3
+02/05/2025 - 12:00;Sala 1;Barbie;H5
+02/05/2025 - 12:00;Sala 1;Barbie;H3
+02/05/2025 - 14:30;Sala 2;Coco;C7
+02/05/2025 - 14:30;Sala 2;Coco;C8
+02/05/2025 - 14:30;Sala 2;Coco;D4
+02/05/2025 - 14:30;Sala 2;Coco;D5
+02/05/2025 - 14:30;Sala 2;Coco;D6
+02/05/2025 - 14:30;Sala 2;Coco;D7
+02/05/2025 - 14:30;Sala 2;Coco;C5
+02/05/2025 - 14:30;Sala 2;Coco;B1
+02/05/2025 - 14:30;Sala 2;Coco;C4
+02/05/2025 - 14:30;Sala 2;Coco;C3
+02/05/2025 - 14:30;Sala 2;Coco;A3
+02/05/2025 - 14:30;Sala 2;Coco;A4
+02/05/2025 - 14:30;Sala 2;Coco;B7
+02/05/2025 - 14:30;Sala 2;Coco;B8
+02/05/2025 - 14:30;Sala 2;Coco;B5
+02/05/2025 - 14:30;Sala 2;Coco;A1
+02/05/2025 - 14:30;Sala 2;Coco;A7
+02/05/2025 - 14:30;Sala 2;Coco;E4
+02/05/2025 - 14:30;Sala 2;Coco;E3
+02/05/2025 - 14:30;Sala 2;Coco;E2
+02/05/2025 - 14:30;Sala 2;Coco;F2
+02/05/2025 - 14:30;Sala 2;Coco;G3
+02/05/2025 - 14:30;Sala 2;Coco;H2
+02/05/2025 - 14:30;Sala 2;Coco;H3
+02/05/2025 - 14:30;Sala 2;Coco;I3
+02/05/2025 - 14:30;Sala 2;Coco;I1
+02/05/2025 - 14:30;Sala 2;Coco;I4
+02/05/2025 - 14:30;Sala 2;Coco;J2
+02/05/2025 - 14:30;Sala 2;Coco;J1
+02/05/2025 - 14:30;Sala 2;Coco;I7
+02/05/2025 - 14:30;Sala 2;Coco;I6
+02/05/2025 - 14:30;Sala 2;Coco;J4
+02/05/2025 - 14:30;Sala 2;Coco;J5
+02/05/2025 - 14:30;Sala 2;Coco;J6
+02/05/2025 - 14:30;Sala 2;Coco;G7
+02/05/2025 - 14:30;Sala 2;Coco;G8
+02/05/2025 - 14:30;Sala 2;Coco;F5
+02/05/2025 - 14:30;Sala 2;Coco;F6
+02/05/2025 - 14:30;Sala 2;Coco;E7
+02/05/2025 - 14:30;Sala 2;Coco;B3
+02/05/2025 - 14:30;Sala 2;Coco;G6
+02/05/2025 - 14:30;Sala 2;Coco;G1
+02/05/2025 - 14:30;Sala 2;Coco;F8
+02/05/2025 - 14:30;Sala 2;Coco;D2
+02/05/2025 - 14:30;Sala 2;Coco;H7
+02/05/2025 - 14:30;Sala 2;Coco;C1
+02/05/2025 - 14:30;Sala 2;Coco;B6
+02/05/2025 - 14:30;Sala 2;Coco;H5
+02/05/2025 - 14:30;Sala 2;Coco;J3
+02/05/2025 - 14:30;Sala 2;Coco;J8
+02/05/2025 - 10:00;Sala 3;Inception;A2
+02/05/2025 - 10:00;Sala 3;Inception;B5
+02/05/2025 - 10:00;Sala 3;Inception;C7
+02/05/2025 - 10:00;Sala 3;Inception;D8
+02/05/2025 - 10:00;Sala 3;Inception;B6
+02/05/2025 - 10:00;Sala 3;Inception;C8
+02/05/2025 - 10:00;Sala 3;Inception;A1
+02/05/2025 - 10:00;Sala 3;Inception;A3
+02/05/2025 - 10:00;Sala 3;Inception;E2
+02/05/2025 - 10:00;Sala 3;Inception;E3
+02/05/2025 - 10:00;Sala 3;Inception;D2
+02/05/2025 - 10:00;Sala 3;Inception;E4
+02/05/2025 - 10:00;Sala 3;Inception;E5
+02/05/2025 - 10:00;Sala 3;Inception;D3
+02/05/2025 - 10:00;Sala 3;Inception;C1
+02/05/2025 - 10:00;Sala 3;Inception;E8
+02/05/2025 - 10:00;Sala 3;Inception;D6
+02/05/2025 - 10:00;Sala 3;Inception;E7
+02/05/2025 - 10:00;Sala 3;Inception;D7
+02/05/2025 - 10:00;Sala 3;Inception;C6
+02/05/2025 - 10:00;Sala 3;Inception;B2
+02/05/2025 - 10:00;Sala 3;Inception;C3
+02/05/2025 - 10:00;Sala 3;Inception;G5
+02/05/2025 - 10:00;Sala 3;Inception;G4
+02/05/2025 - 10:00;Sala 3;Inception;G3
+02/05/2025 - 10:00;Sala 3;Inception;G1
+02/05/2025 - 10:00;Sala 3;Inception;H7
+02/05/2025 - 10:00;Sala 3;Inception;H1
+02/05/2025 - 10:00;Sala 3;Inception;G7
+02/05/2025 - 10:00;Sala 3;Inception;H2
+02/05/2025 - 10:00;Sala 3;Inception;F8
+02/05/2025 - 10:00;Sala 3;Inception;I5
+02/05/2025 - 10:00;Sala 3;Inception;I6
+02/05/2025 - 10:00;Sala 3;Inception;J4
+02/05/2025 - 10:00;Sala 3;Inception;J5
+02/05/2025 - 10:00;Sala 3;Inception;I7
+02/05/2025 - 10:00;Sala 3;Inception;J2
+02/05/2025 - 10:00;Sala 3;Inception;I3
+02/05/2025 - 10:00;Sala 3;Inception;H5
+02/05/2025 - 10:00;Sala 3;Inception;F4
+02/05/2025 - 10:00;Sala 3;Inception;F3
+02/05/2025 - 10:00;Sala 3;Inception;D5
+02/05/2025 - 10:00;Sala 3;Inception;A6
+02/05/2025 - 10:00;Sala 3;Inception;A8
+02/05/2025 - 10:00;Sala 3;Inception;B3
+02/05/2025 - 10:00;Sala 3;Inception;J8
+02/05/2025 - 10:00;Sala 3;Inception;I1
+02/05/2025 - 10:00;Sala 3;Inception;F7
+02/05/2025 - 10:00;Sala 3;Inception;F6
+02/05/2025 - 10:00;Sala 3;Inception;B7
+02/05/2025 - 10:00;Sala 3;Inception;I2
+02/05/2025 - 10:00;Sala 3;Inception;G6
+02/05/2025 - 10:00;Sala 3;Inception;G2
+02/05/2025 - 10:00;Sala 3;Inception;B8
+02/05/2025 - 10:00;Sala 3;Inception;D1
+02/05/2025 - 10:00;Sala 3;Inception;I8
+02/05/2025 - 10:00;Sala 3;Inception;J1
+02/05/2025 - 10:00;Sala 3;Inception;G8
+02/05/2025 - 10:00;Sala 3;Inception;E1
+02/05/2025 - 17:00;Sala 2;Parasite;E1
+02/05/2025 - 17:00;Sala 2;Parasite;C8
+02/05/2025 - 17:00;Sala 2;Parasite;E2
+02/05/2025 - 17:00;Sala 2;Parasite;D5
+02/05/2025 - 17:00;Sala 2;Parasite;E6
+02/05/2025 - 17:00;Sala 2;Parasite;G5
+02/05/2025 - 17:00;Sala 2;Parasite;E7
+02/05/2025 - 17:00;Sala 2;Parasite;G2
+02/05/2025 - 17:00;Sala 2;Parasite;H7
+02/05/2025 - 17:00;Sala 2;Parasite;I7
+02/05/2025 - 17:00;Sala 2;Parasite;H8
+02/05/2025 - 17:00;Sala 2;Parasite;I5
+02/05/2025 - 17:00;Sala 2;Parasite;I6
+02/05/2025 - 17:00;Sala 2;Parasite;H6
+02/05/2025 - 17:00;Sala 2;Parasite;J2
+02/05/2025 - 17:00;Sala 2;Parasite;I2
+02/05/2025 - 17:00;Sala 2;Parasite;F4
+02/05/2025 - 17:00;Sala 2;Parasite;B3
+02/05/2025 - 17:00;Sala 2;Parasite;B2
+02/05/2025 - 17:00;Sala 2;Parasite;A1
+02/05/2025 - 17:00;Sala 2;Parasite;A3
+02/05/2025 - 17:00;Sala 2;Parasite;A2
+02/05/2025 - 17:00;Sala 2;Parasite;B7
+02/05/2025 - 17:00;Sala 2;Parasite;B5
+02/05/2025 - 17:00;Sala 2;Parasite;C1
+02/05/2025 - 17:00;Sala 2;Parasite;C2
+02/05/2025 - 17:00;Sala 2;Parasite;J7
+02/05/2025 - 17:00;Sala 2;Parasite;J6
+02/05/2025 - 17:00;Sala 2;Parasite;E4
+02/05/2025 - 17:00;Sala 2;Parasite;H4
+02/05/2025 - 17:00;Sala 2;Parasite;H3
+02/05/2025 - 17:00;Sala 2;Parasite;G7
+02/05/2025 - 17:00;Sala 2;Parasite;A8
+02/05/2025 - 17:00;Sala 2;Parasite;A6
+02/05/2025 - 17:00;Sala 2;Parasite;A5
+02/05/2025 - 17:00;Sala 2;Parasite;D7
+02/05/2025 - 17:00;Sala 2;Parasite;E8
+02/05/2025 - 17:00;Sala 2;Parasite;F1
+02/05/2025 - 17:30;Sala 3;The Godfather;A1
+02/05/2025 - 17:30;Sala 3;The Godfather;C7
+02/05/2025 - 17:30;Sala 3;The Godfather;D8
+02/05/2025 - 17:30;Sala 3;The Godfather;F1
+02/05/2025 - 17:30;Sala 3;The Godfather;H6
+02/05/2025 - 17:30;Sala 3;The Godfather;G3
+02/05/2025 - 17:30;Sala 3;The Godfather;F6
+02/05/2025 - 17:30;Sala 3;The Godfather;D5
+02/05/2025 - 17:30;Sala 3;The Godfather;D2
+02/05/2025 - 17:30;Sala 3;The Godfather;H4
+02/05/2025 - 17:30;Sala 3;The Godfather;J3
+02/05/2025 - 17:30;Sala 3;The Godfather;J2
+02/05/2025 - 17:30;Sala 3;The Godfather;I8
+02/05/2025 - 17:30;Sala 3;The Godfather;J6
+02/05/2025 - 17:30;Sala 3;The Godfather;I6
+02/05/2025 - 17:30;Sala 3;The Godfather;J5
+02/05/2025 - 17:30;Sala 3;The Godfather;G6
+02/05/2025 - 17:30;Sala 3;The Godfather;G5
+02/05/2025 - 17:30;Sala 3;The Godfather;I1
+02/05/2025 - 17:30;Sala 3;The Godfather;I2
+02/05/2025 - 17:30;Sala 3;The Godfather;I3
+02/05/2025 - 17:30;Sala 3;The Godfather;I4
+02/05/2025 - 17:30;Sala 3;The Godfather;H8
+02/05/2025 - 17:30;Sala 3;The Godfather;E4
+02/05/2025 - 17:30;Sala 3;The Godfather;B8
+02/05/2025 - 17:30;Sala 3;The Godfather;C3
+02/05/2025 - 17:30;Sala 3;The Godfather;B1
+02/05/2025 - 17:30;Sala 3;The Godfather;A8
+02/05/2025 - 17:30;Sala 3;The Godfather;B3
+02/05/2025 - 17:30;Sala 3;The Godfather;C6
+02/05/2025 - 17:30;Sala 3;The Godfather;E8
+02/05/2025 - 17:30;Sala 3;The Godfather;B6
+02/05/2025 - 17:30;Sala 3;The Godfather;A3
+02/05/2025 - 17:30;Sala 3;The Godfather;A4
+02/05/2025 - 17:30;Sala 3;The Godfather;F3
+02/05/2025 - 17:30;Sala 3;The Godfather;F4
+02/05/2025 - 16:30;Sala 1;The Matrix;B7
+02/05/2025 - 16:30;Sala 1;The Matrix;C1
+02/05/2025 - 16:30;Sala 1;The Matrix;F2
+02/05/2025 - 16:30;Sala 1;The Matrix;B8
+02/05/2025 - 16:30;Sala 1;The Matrix;C4
+02/05/2025 - 16:30;Sala 1;The Matrix;H8
+03/05/2025 - 12:00;Sala 1;Avengers: Endgame;G1
+03/05/2025 - 12:00;Sala 1;Avengers: Endgame;E1
+03/05/2025 - 12:00;Sala 1;Avengers: Endgame;A7
+03/05/2025 - 12:00;Sala 1;Avengers: Endgame;F7
+03/05/2025 - 12:00;Sala 1;Avengers: Endgame;B8
+03/05/2025 - 12:00;Sala 1;Avengers: Endgame;H3
+03/05/2025 - 12:00;Sala 1;Avengers: Endgame;I7
+03/05/2025 - 12:00;Sala 1;Avengers: Endgame;H8
+03/05/2025 - 12:00;Sala 1;Avengers: Endgame;H7
+03/05/2025 - 12:00;Sala 1;Avengers: Endgame;I1
+03/05/2025 - 12:00;Sala 1;Avengers: Endgame;H4
+03/05/2025 - 12:00;Sala 1;Avengers: Endgame;F6
+03/05/2025 - 12:00;Sala 1;Avengers: Endgame;D7
+03/05/2025 - 12:00;Sala 1;Avengers: Endgame;D6
+03/05/2025 - 12:00;Sala 1;Avengers: Endgame;B3
+03/05/2025 - 12:00;Sala 1;Avengers: Endgame;C6
+03/05/2025 - 12:00;Sala 1;Avengers: Endgame;A3
+03/05/2025 - 12:00;Sala 1;Avengers: Endgame;B6
+03/05/2025 - 12:00;Sala 1;Avengers: Endgame;B4
+03/05/2025 - 12:00;Sala 1;Avengers: Endgame;J8
+03/05/2025 - 12:00;Sala 1;Avengers: Endgame;E4
+03/05/2025 - 12:00;Sala 1;Avengers: Endgame;D3
+03/05/2025 - 12:00;Sala 1;Avengers: Endgame;D4
+03/05/2025 - 12:30;Sala 2;Pulp Fiction;F3
+03/05/2025 - 12:30;Sala 2;Pulp Fiction;H2
+03/05/2025 - 12:30;Sala 2;Pulp Fiction;H8
+03/05/2025 - 12:30;Sala 2;Pulp Fiction;F5
+03/05/2025 - 12:30;Sala 2;Pulp Fiction;G7
+03/05/2025 - 12:30;Sala 2;Pulp Fiction;A5
+03/05/2025 - 12:30;Sala 2;Pulp Fiction;B7
+03/05/2025 - 12:30;Sala 2;Pulp Fiction;D6
+03/05/2025 - 12:30;Sala 2;Pulp Fiction;E1
+03/05/2025 - 12:30;Sala 2;Pulp Fiction;J3
+03/05/2025 - 12:30;Sala 2;Pulp Fiction;J2
+03/05/2025 - 12:30;Sala 2;Pulp Fiction;I1
+03/05/2025 - 12:30;Sala 2;Pulp Fiction;I2
+03/05/2025 - 12:30;Sala 2;Pulp Fiction;F4
+03/05/2025 - 12:30;Sala 2;Pulp Fiction;C4
+03/05/2025 - 12:30;Sala 2;Pulp Fiction;D7
+03/05/2025 - 12:30;Sala 2;Pulp Fiction;B3
+03/05/2025 - 12:30;Sala 2;Pulp Fiction;C6
+03/05/2025 - 12:30;Sala 2;Pulp Fiction;A2
+03/05/2025 - 12:30;Sala 2;Pulp Fiction;C8
+03/05/2025 - 12:30;Sala 2;Pulp Fiction;D1
+03/05/2025 - 13:00;Sala 3;Inception;C7
+03/05/2025 - 13:00;Sala 3;Inception;B6
+03/05/2025 - 13:00;Sala 3;Inception;J2
+03/05/2025 - 13:00;Sala 3;Inception;I1
+03/05/2025 - 13:00;Sala 3;Inception;G4
+03/05/2025 - 13:00;Sala 3;Inception;H7
+03/05/2025 - 13:00;Sala 3;Inception;E5
+03/05/2025 - 13:00;Sala 3;Inception;D6
+03/05/2025 - 13:00;Sala 3;Inception;E6
+03/05/2025 - 13:00;Sala 3;Inception;D5
+03/05/2025 - 13:00;Sala 3;Inception;G6
+03/05/2025 - 13:00;Sala 3;Inception;G5
+03/05/2025 - 13:00;Sala 3;Inception;G8
+03/05/2025 - 13:00;Sala 3;Inception;G1
+03/05/2025 - 13:00;Sala 3;Inception;I5
+03/05/2025 - 13:00;Sala 3;Inception;I6
+03/05/2025 - 13:00;Sala 3;Inception;H1
+03/05/2025 - 13:00;Sala 3;Inception;F8
+03/05/2025 - 13:00;Sala 3;Inception;E2
+03/05/2025 - 13:00;Sala 3;Inception;D2
+03/05/2025 - 13:00;Sala 3;Inception;D3
+03/05/2025 - 13:00;Sala 3;Inception;A8
+03/05/2025 - 16:30;Sala 1;Coco;D8
+03/05/2025 - 16:30;Sala 1;Coco;E1
+03/05/2025 - 16:30;Sala 1;Coco;F1
+03/05/2025 - 16:30;Sala 1;Coco;F2
+03/05/2025 - 16:30;Sala 1;Coco;H1
+03/05/2025 - 16:30;Sala 1;Coco;H2
+03/05/2025 - 16:30;Sala 1;Coco;H3
+03/05/2025 - 16:30;Sala 1;Coco;D3
+03/05/2025 - 16:30;Sala 1;Coco;E6
+03/05/2025 - 16:30;Sala 1;Coco;C2
+03/05/2025 - 16:30;Sala 1;Coco;C1
+03/05/2025 - 16:30;Sala 1;Coco;B2
+03/05/2025 - 16:30;Sala 1;Coco;C5
+03/05/2025 - 16:30;Sala 1;Coco;C6
+03/05/2025 - 16:30;Sala 1;Coco;J2
+03/05/2025 - 16:30;Sala 1;Coco;J3
+03/05/2025 - 16:30;Sala 1;Coco;H7
+03/05/2025 - 16:30;Sala 1;Coco;H6
+03/05/2025 - 16:30;Sala 1;Coco;F4
+03/05/2025 - 16:30;Sala 1;Coco;F5
+03/05/2025 - 16:30;Sala 1;Coco;A3
+03/05/2025 - 17:00;Sala 2;Barbie;D8
+03/05/2025 - 17:00;Sala 2;Barbie;E1
+03/05/2025 - 17:00;Sala 2;Barbie;B6
+03/05/2025 - 17:00;Sala 2;Barbie;B5
+03/05/2025 - 17:00;Sala 2;Barbie;H5
+03/05/2025 - 17:00;Sala 2;Barbie;H3
+03/05/2025 - 17:00;Sala 2;Barbie;F6
+03/05/2025 - 17:00;Sala 2;Barbie;F7
+03/05/2025 - 17:00;Sala 2;Barbie;H8
+03/05/2025 - 17:00;Sala 2;Barbie;I6
+03/05/2025 - 17:00;Sala 2;Barbie;D4
+03/05/2025 - 17:00;Sala 2;Barbie;C4
+03/05/2025 - 17:30;Sala 3;The Matrix;E4
+03/05/2025 - 17:30;Sala 3;The Matrix;E3
+03/05/2025 - 17:30;Sala 3;The Matrix;A8
+03/05/2025 - 17:30;Sala 3;The Matrix;A7
+03/05/2025 - 17:30;Sala 3;The Matrix;A6
+03/05/2025 - 17:30;Sala 3;The Matrix;I3
+03/05/2025 - 17:30;Sala 3;The Matrix;I8
+03/05/2025 - 17:30;Sala 3;The Matrix;G6
+03/05/2025 - 17:30;Sala 3;The Matrix;H7
+03/05/2025 - 17:30;Sala 3;The Matrix;I7
+03/05/2025 - 17:30;Sala 3;The Matrix;I6
+03/05/2025 - 17:30;Sala 3;The Matrix;I4
+03/05/2025 - 17:30;Sala 3;The Matrix;G5
+03/05/2025 - 17:30;Sala 3;The Matrix;H5
+02/05/2025 - 17:30;Sala 3;The Godfather;E2
